@@ -248,24 +248,39 @@
       width: auto;
       height: auto;
       background-color: #000;
-      /* Hide browser cursor over the remote desktop video - SHOW ONLY REMOTE CURSOR */
-      cursor: none !important;
+      /* Show both local browser cursor AND remote desktop cursor for better UX */
+      /* Options: crosshair, pointer, default, grab, move */
+      cursor: crosshair;
+      transition: cursor 0.1s ease;
     }
     
-    /* Ensure cursor is hidden when hovering over video wrapper too */
+    /* Use crosshair cursor to distinguish from remote cursor */
     .dell-video-wrapper {
-      cursor: none !important;
+      cursor: crosshair;
+      transition: cursor 0.1s ease;
     }
     
-    /* Hide cursor during video interaction */
+    /* Maintain crosshair cursor during video interaction */
     .dell-video-container:hover video,
     .dell-video-container:hover .dell-video-wrapper {
-      cursor: none !important;
+      cursor: crosshair;
     }
     
-    /* Make sure fullscreen video also hides cursor */
-    .fullscreen video {
-      cursor: none !important;
+    /* Alternative cursor styles for different use cases */
+    .cursor-pointer video, .cursor-pointer .dell-video-wrapper {
+      cursor: pointer;
+    }
+    
+    .cursor-grab video, .cursor-grab .dell-video-wrapper {
+      cursor: grab;
+    }
+    
+    .cursor-grab video:active, .cursor-grab .dell-video-wrapper:active {
+      cursor: grabbing;
+    }
+    
+    .cursor-default video, .cursor-default .dell-video-wrapper {
+      cursor: default;
     }
 
     /* Fullscreen Styles */
@@ -283,7 +298,7 @@
       max-width: none;
       max-height: none;
       border-radius: 0;
-      cursor: none !important;
+      cursor: crosshair;
     }
 
     .fullscreen .dell-video-wrapper {
@@ -767,6 +782,11 @@
           <button class="dell-tooltip-btn" id="fullscreenBtn" title="Fullscreen (F11)">
             <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
               <path d="M5.828 10.172a.5.5 0 0 0-.707 0l-4.096 4.096V11.5a.5.5 0 0 0-1 0v3.975a.5.5 0 0 0 .5.5H4.5a.5.5 0 0 0 0-1H1.732l4.096-4.096a.5.5 0 0 0 0-.707zm4.344 0a.5.5 0 0 1 .707 0l4.096 4.096V11.5a.5.5 0 1 1 1 0v3.975a.5.5 0 0 1-.5.5H11.5a.5.5 0 0 1 0-1h2.768l-4.096-4.096a.5.5 0 0 1 0-.707zm0-4.344a.5.5 0 0 0 .707 0l4.096-4.096V4.5a.5.5 0 1 0 1 0V.525a.5.5 0 0 0-.5-.5H11.5a.5.5 0 0 0 0 1h2.768l-4.096 4.096a.5.5 0 0 0 0 .707zm-4.344 0a.5.5 0 0 1-.707 0L1.025 1.732V4.5a.5.5 0 0 1-1 0V.525a.5.5 0 0 1 .5-.5H4.5a.5.5 0 0 1 0 1H1.732l4.096 4.096a.5.5 0 0 1 0 .707z"/>
+            </svg>
+          </button>
+          <button class="dell-tooltip-btn" id="cursorBtn" title="Toggle Cursor Style (Crosshair)">
+            <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
             </svg>
           </button>
         </div>
