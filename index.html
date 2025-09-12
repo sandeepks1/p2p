@@ -1,868 +1,1029 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dell Remote Desktop</title>
-  <link rel="icon" type="image/x-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjMDA3Q0I3Ii8+CjxwYXRoIGQ9Ik04IDhIMjRWMjRIOFY4WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+">
-  <style>
-    /* Dell Design System Variables */
-    :root {
-      /* Primary Colors */
-      --dell-blue-primary: #007DB8;
-      --dell-blue-dark: #005A87;
-      --dell-blue-light: #4DA6D9;
-      --dell-blue-lighter: #E6F4FA;
-      
-      /* Secondary Colors */
-      --dell-gray-900: #1D1E1F;
-      --dell-gray-800: #2D2F31;
-      --dell-gray-700: #44464A;
-      --dell-gray-600: #5C5F66;
-      --dell-gray-500: #747982;
-      --dell-gray-400: #8D919E;
-      --dell-gray-300: #A5AABC;
-      --dell-gray-200: #BEC3D3;
-      --dell-gray-100: #D6DCEB;
-      --dell-gray-50: #EEF2F8;
-      --dell-gray-25: #F7F9FC;
-      
-      /* Status Colors */
-      --dell-green: #00A651;
-      --dell-red: #DC382D;
-      --dell-orange: #F57C00;
-      --dell-yellow: #FFB000;
-      
-      /* Typography */
-      --dell-font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-      --dell-font-size-xs: 12px;
-      --dell-font-size-sm: 14px;
-      --dell-font-size-base: 16px;
-      --dell-font-size-lg: 18px;
-      --dell-font-size-xl: 20px;
-      --dell-font-size-2xl: 24px;
-      
-      /* Spacing */
-      --dell-spacing-xs: 4px;
-      --dell-spacing-sm: 8px;
-      --dell-spacing-md: 16px;
-      --dell-spacing-lg: 24px;
-      --dell-spacing-xl: 32px;
-      --dell-spacing-2xl: 48px;
-      
-      /* Border Radius */
-      --dell-radius-sm: 4px;
-      --dell-radius-md: 6px;
-      --dell-radius-lg: 8px;
-      
-      /* Shadows */
-      --dell-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-      --dell-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-      --dell-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: var(--dell-font-family);
-      background-color: var(--dell-gray-50);
-      color: var(--dell-gray-900);
-      overflow: hidden;
-      height: 100vh;
-    }
-
-    /* Dell Header Styling - Minimal Transparent */
-    .dell-header {
-      background: rgba(0, 0, 0, 0.1);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      color: white;
-      padding: var(--dell-spacing-sm) 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 1000;
-      border: none;
-      height: 50px;
-    }
-
-    .dell-logo {
-      display: flex;
-      align-items: center;
-      font-size: var(--dell-font-size-xl);
-      font-weight: 600;
-      color: white;
-    }
-
-    .dell-logo-icon {
-      width: 32px;
-      height: 32px;
-      background-color: white;
-      border-radius: var(--dell-radius-sm);
-      margin-right: var(--dell-spacing-md);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: var(--dell-font-size-lg);
-      color: var(--dell-blue-primary);
-      font-weight: bold;
-    }
-
-    .dell-logo-icon img {
-      height: 40px;
-    }
-
-    .dell-toolbar {
-      display: flex;
-      gap: var(--dell-spacing-sm);
-      align-items: center;
-    }
-
-    .dell-tool-group {
-      display: flex;
-      gap: 2px;
-      background-color: rgba(255, 255, 255, 0.1);
-      border-radius: var(--dell-radius-md);
-      padding: 2px;
-    }
-
-    .dell-btn {
-      background-color: transparent;
-      border: 1px solid transparent;
-      color: white;
-      padding: var(--dell-spacing-sm) var(--dell-spacing-md);
-      border-radius: var(--dell-radius-sm);
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-size: var(--dell-font-size-sm);
-      display: flex;
-      align-items: center;
-      gap: var(--dell-spacing-xs);
-      min-width: 36px;
-      justify-content: center;
-      font-family: var(--dell-font-family);
-    }
-
-    .dell-btn:hover {
-      background-color: rgba(255, 255, 255, 0.2);
-      border-color: rgba(255, 255, 255, 0.3);
-    }
-
-    .dell-btn:active {
-      background-color: rgba(255, 255, 255, 0.1);
-    }
-
-    .dell-btn.active {
-      background-color: white;
-      color: var(--dell-blue-primary);
-      border-color: white;
-    }
-
-    .dell-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .dell-btn:disabled:hover {
-      background-color: transparent;
-      border-color: transparent;
-    }
-
-    /* Status Panel */
-    .dell-status-panel {
-      display: flex;
-      align-items: center;
-      gap: var(--dell-spacing-lg);
-      font-size: var(--dell-font-size-sm);
-    }
-
-    .dell-status-indicator {
-      display: flex;
-      align-items: center;
-      gap: var(--dell-spacing-sm);
-      background-color: rgba(255, 255, 255, 0.1);
-      padding: var(--dell-spacing-xs) var(--dell-spacing-md);
-      border-radius: var(--dell-radius-lg);
-    }
-
-    .dell-status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background-color: var(--dell-red);
-      animation: pulse 2s infinite;
-    }
-
-    .dell-status-dot.connected {
-      background-color: var(--dell-green);
-      animation: none;
-    }
-
-    .dell-status-dot.warning {
-      background-color: var(--dell-orange);
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-
-    .dell-quality-info {
-      font-size: var(--dell-font-size-xs);
-      color: rgba(255, 255, 255, 0.8);
-    }
-
-    /* Video Container */
-    .dell-video-container {
-      position: relative;
-      width: 100%;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background-color: var(--dell-gray-900);
-    }
-
-    .dell-video-wrapper {
-      position: relative;
-      max-width: 100%;
-      max-height: 100%;
-      border-radius: var(--dell-radius-lg);
-      overflow: hidden;
-      box-shadow: var(--dell-shadow-lg);
-      background-color: #000;
-    }
-
-    video {
-      display: block;
-      max-width: 100%;
-      max-height: 100%;
-      width: auto;
-      height: auto;
-      background-color: #000;
-    }
-
-    /* Fullscreen Styles */
-    .fullscreen {
-      overflow: hidden;
-    }
-
-    .fullscreen .dell-video-container {
-      height: 100vh;
-    }
-
-    .fullscreen video {
-      width: 100vw;
-      height: 100vh;
-      max-width: none;
-      max-height: none;
-      border-radius: 0;
-    }
-
-    .fullscreen .dell-video-wrapper {
-      max-width: none;
-      max-height: none;
-      width: 100vw;
-      height: 100vh;
-      border-radius: 0;
-      box-shadow: none;
-    }
-
-    /* Loading Screen */
-    .dell-loading-screen {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, var(--dell-blue-primary), var(--dell-blue-dark));
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 10;
-      transition: opacity 0.5s ease;
-    }
-
-    .dell-loading-screen.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .dell-spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50%;
-      border-top-color: white;
-      animation: spin 1s linear infinite;
-      margin-bottom: var(--dell-spacing-lg);
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .dell-loading-text {
-      font-size: var(--dell-font-size-lg);
-      color: white;
-      margin-bottom: var(--dell-spacing-sm);
-      font-weight: 500;
-    }
-
-    .dell-loading-subtext {
-      font-size: var(--dell-font-size-sm);
-      color: rgba(255, 255, 255, 0.8);
-      text-align: center;
-    }
-
-    /* Counter Display */
-    .dell-counter-display {
-      position: absolute;
-      top: var(--dell-spacing-md);
-      left: var(--dell-spacing-md);
-      background-color: var(--dell-gray-900);
-      color: var(--dell-blue-light);
-      padding: var(--dell-spacing-sm) var(--dell-spacing-md);
-      border-radius: var(--dell-radius-md);
-      font-family: 'Courier New', monospace;
-      font-size: var(--dell-font-size-sm);
-      font-weight: 500;
-      border: 1px solid var(--dell-gray-700);
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      backdrop-filter: blur(10px);
-    }
-
-    .dell-counter-display.visible {
-      opacity: 1;
-    }
-
-    /* Fullscreen Overlay - Completely Transparent */
-    .dell-fullscreen-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: rgba(0, 0, 0, 0.05);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      color: white;
-      padding: var(--dell-spacing-sm) var(--dell-spacing-lg);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 2000;
-      opacity: 0;
-      transform: translateY(-100%);
-      transition: all 0.3s ease;
-      height: 50px;
-    }
-
-    .fullscreen .dell-fullscreen-overlay {
-      display: flex;
-    }
-
-    .fullscreen .dell-fullscreen-overlay.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .dell-connection-stats {
-      display: flex;
-      gap: var(--dell-spacing-lg);
-      font-size: var(--dell-font-size-xs);
-    }
-
-    .dell-stat-item {
-      display: flex;
-      align-items: center;
-      gap: var(--dell-spacing-xs);
-    }
-
-    /* Dell Icons */
-    .dell-icon {
-      width: 16px;
-      height: 16px;
-      display: inline-block;
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-      .dell-header {
-        padding: var(--dell-spacing-sm) var(--dell-spacing-md);
-      }
-      
-      .dell-toolbar {
-        flex-wrap: wrap;
-        gap: var(--dell-spacing-xs);
-      }
-      
-      .dell-tool-group {
-        gap: 1px;
-        padding: 1px;
-      }
-      
-      .dell-btn {
-        padding: var(--dell-spacing-xs) var(--dell-spacing-sm);
-        font-size: var(--dell-font-size-xs);
-        min-width: 32px;
-      }
-      
-      .dell-status-panel {
-        gap: var(--dell-spacing-sm);
-      }
-
-      .dell-logo {
-        font-size: var(--dell-font-size-lg);
-      }
-
-      .dell-logo-icon {
-        width: 24px;
-        height: 24px;
-        margin-right: var(--dell-spacing-sm);
-      }
-    }
-
-    /* Dell Notification Toast */
-    .dell-toast {
-      position: fixed;
-      top: var(--dell-spacing-lg);
-      right: var(--dell-spacing-lg);
-      background-color: white;
-      border: 1px solid var(--dell-gray-200);
-      border-radius: var(--dell-radius-md);
-      padding: var(--dell-spacing-md);
-      box-shadow: var(--dell-shadow-lg);
-      z-index: 3000;
-      transform: translateX(400px);
-      transition: transform 0.3s ease;
-      max-width: 300px;
-    }
-
-    .dell-toast.show {
-      transform: translateX(0);
-    }
-
-    .dell-toast.success {
-      border-left: 4px solid var(--dell-green);
-    }
-
-    .dell-toast.error {
-      border-left: 4px solid var(--dell-red);
-    }
-
-    .dell-toast.warning {
-      border-left: 4px solid var(--dell-orange);
-    }
-
-    /* Apps Dropdown */
-    .dell-apps-dropdown {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      background: rgba(0, 0, 0, 0.9);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      border-radius: var(--dell-radius-md);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      box-shadow: var(--dell-shadow-lg);
-      z-index: 3000;
-      min-width: 150px;
-      opacity: 0;
-      transform: translateY(-10px);
-      pointer-events: none;
-      transition: all 0.2s ease;
-    }
-
-    .dell-apps-dropdown.show {
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: auto;
-    }
-
-    .dell-app-item {
-      padding: var(--dell-spacing-sm) var(--dell-spacing-md);
-      color: white;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-      font-size: var(--dell-font-size-sm);
-    }
-
-    .dell-app-item:hover {
-      background-color: rgba(255, 255, 255, 0.2);
-    }
-
-    .dell-app-item:first-child {
-      border-radius: var(--dell-radius-md) var(--dell-radius-md) 0 0;
-    }
-
-    .dell-app-item:last-child {
-      border-radius: 0 0 var(--dell-radius-md) var(--dell-radius-md);
-    }
-
-    /* Recording Button States */
-    .dell-btn.recording {
-      background-color: rgba(220, 56, 45, 0.2);
-      border-color: rgba(220, 56, 45, 0.5);
-      animation: pulse-red 2s infinite;
-    }
-
-    @keyframes pulse-red {
-      0%, 100% { 
-        background-color: rgba(220, 56, 45, 0.2);
-      }
-      50% { 
-        background-color: rgba(220, 56, 45, 0.4);
-      }
-    }
-
-    /* Recording Icon States */
-    .recording-icon-stop {
-      transform: scale(0.8);
-    }
-
-    .recording-icon-stop rect {
-      rx: 2;
-      ry: 2;
-    }
-
-    /* Tooltip Trigger Button */
-    .dell-tooltip-trigger {
-      position: fixed;
-      top: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 32px;
-      height: 32px;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      border-radius: 50%;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: white;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 2000;
-      transition: all 0.3s ease;
-      opacity: 0.6;
-    }
-
-    .dell-tooltip-trigger:hover {
-      opacity: 1;
-      background: rgba(0, 0, 0, 0.9);
-      transform: translateX(-50%) scale(1.1);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    }
-
-    .dell-tooltip-icon {
-      width: 16px;
-      height: 16px;
-    }
-
-    /* Tooltip Panel - Horizontal Bar */
-    .dell-tooltip-panel {
-      position: fixed;
-      top: 60px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.9);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-radius: var(--dell-radius-lg);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-      z-index: 1999;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateX(-50%) translateY(-20px) scale(0.95);
-      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-      pointer-events: none;
-      white-space: nowrap;
-    }
-
-    .dell-tooltip-panel.show {
-      opacity: 1;
-      visibility: visible;
-      transform: translateX(-50%) translateY(0) scale(1);
-      pointer-events: auto;
-    }
-
-    .dell-tooltip-content {
-      padding: var(--dell-spacing-md);
-      color: white;
-      display: flex;
-      align-items: center;
-      gap: var(--dell-spacing-lg);
-    }
-
-    .dell-tooltip-group {
-      display: flex;
-      align-items: center;
-      gap: var(--dell-spacing-sm);
-    }
-
-    .dell-tooltip-label {
-      font-size: var(--dell-font-size-xs);
-      color: rgba(255, 255, 255, 0.7);
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-right: var(--dell-spacing-xs);
-      white-space: nowrap;
-    }
-
-    .dell-tooltip-buttons {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-      position: relative;
-    }
-
-    .dell-tooltip-btn {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: white;
-      padding: var(--dell-spacing-xs);
-      border-radius: var(--dell-radius-sm);
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 32px;
-      min-height: 32px;
-      position: relative;
-    }
-
-    .dell-tooltip-btn:hover {
-      background: rgba(255, 255, 255, 0.2);
-      border-color: rgba(255, 255, 255, 0.4);
-      transform: translateY(-1px);
-    }
-
-    .dell-tooltip-btn:active {
-      transform: translateY(0);
-      background: rgba(255, 255, 255, 0.15);
-    }
-
-    .dell-tooltip-btn.active {
-      background: rgba(0, 125, 184, 0.8);
-      border-color: var(--dell-blue-primary);
-    }
-
-    .dell-tooltip-btn.recording {
-      background: rgba(220, 56, 45, 0.3);
-      border-color: rgba(220, 56, 45, 0.6);
-      animation: pulse-red 2s infinite;
-    }
-
-    .dell-disconnect-btn {
-      background: rgba(220, 56, 45, 0.2) !important;
-      border-color: rgba(220, 56, 45, 0.5) !important;
-      font-size: var(--dell-font-size-xs);
-      padding: var(--dell-spacing-xs) var(--dell-spacing-sm);
-      gap: 4px;
-      min-width: auto;
-      height: 32px;
-    }
-
-    .dell-disconnect-btn:hover {
-      background: rgba(220, 56, 45, 0.4) !important;
-      border-color: rgba(220, 56, 45, 0.7) !important;
-    }
-
-    .dell-tooltip-status {
-      display: flex;
-      align-items: center;
-      gap: var(--dell-spacing-xs);
-      background: rgba(255, 255, 255, 0.05);
-      padding: var(--dell-spacing-xs) var(--dell-spacing-sm);
-      border-radius: var(--dell-radius-sm);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      font-size: var(--dell-font-size-xs);
-      height: 32px;
-      white-space: nowrap;
-    }
-
-    /* Fullscreen state - hide tooltip trigger */
-    .fullscreen .dell-tooltip-trigger {
-      opacity: 0;
-      visibility: hidden;
-    }
-
-    .fullscreen .dell-tooltip-panel {
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-    }
-
-    /* Focus States for Accessibility */
-    .dell-btn:focus {
-      outline: 2px solid white;
-      outline-offset: 2px;
-    }
-
-    .dell-tooltip-btn:focus {
-      outline: 2px solid rgba(0, 125, 184, 0.8);
-      outline-offset: 2px;
-    }
-
-    .dell-tooltip-trigger:focus {
-      outline: 2px solid rgba(0, 125, 184, 0.8);
-      outline-offset: 2px;
-    }
-  </style>
-</head>
-<body>
-  <!-- Tooltip Button - Centered at top -->
-  <div class="dell-tooltip-trigger" id="tooltipTrigger">
-    <svg class="dell-tooltip-icon" fill="currentColor" viewBox="0 0 16 16">
-      <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-      <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
-    </svg>
-  </div>
-
-  <!-- Tooltip Panel - Horizontal Bar -->
-  <div class="dell-tooltip-panel" id="tooltipPanel">
-    <div class="dell-tooltip-content">
-      <!-- View Controls -->
-      <div class="dell-tooltip-group">
-        <div class="dell-tooltip-label">View</div>
-        <div class="dell-tooltip-buttons">
-          <button class="dell-tooltip-btn" id="fitScreenBtn" title="Fit to Screen">
-            <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M1.5 1.5A.5.5 0 0 1 2 1h3a.5.5 0 0 1 0 1H2v3a.5.5 0 0 1-1 0V2a.5.5 0 0 1 .5-.5zm11 0A.5.5 0 0 1 13 1h1.5a.5.5 0 0 1 .5.5V5a.5.5 0 0 1-1 0V2h-2.5a.5.5 0 0 1 0-1zM1.5 14.5A.5.5 0 0 1 1 14v-3.5a.5.5 0 0 1 1 0V14h3a.5.5 0 0 1 0 1H2a.5.5 0 0 1-.5-.5zm13 0a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1 0-1H14v-3a.5.5 0 0 1 1 0v3.5z"/>
-            </svg>
-          </button>
-          <button class="dell-tooltip-btn" id="fullscreenBtn" title="Fullscreen (F11)">
-            <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M5.828 10.172a.5.5 0 0 0-.707 0l-4.096 4.096V11.5a.5.5 0 0 0-1 0v3.975a.5.5 0 0 0 .5.5H4.5a.5.5 0 0 0 0-1H1.732l4.096-4.096a.5.5 0 0 0 0-.707zm4.344 0a.5.5 0 0 1 .707 0l4.096 4.096V11.5a.5.5 0 1 1 1 0v3.975a.5.5 0 0 1-.5.5H11.5a.5.5 0 0 1 0-1h2.768l-4.096-4.096a.5.5 0 0 1 0-.707zm0-4.344a.5.5 0 0 0 .707 0l4.096-4.096V4.5a.5.5 0 1 0 1 0V.525a.5.5 0 0 0-.5-.5H11.5a.5.5 0 0 0 0 1h2.768l-4.096 4.096a.5.5 0 0 0 0 .707zm-4.344 0a.5.5 0 0 1-.707 0L1.025 1.732V4.5a.5.5 0 0 1-1 0V.525a.5.5 0 0 1 .5-.5H4.5a.5.5 0 0 1 0 1H1.732l4.096 4.096a.5.5 0 0 1 0 .707z"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-      
-      <!-- Vertical Divider -->
-      <div style="width: 1px; height: 32px; background: rgba(255, 255, 255, 0.2);"></div>
-      
-      <!-- Capture Controls -->
-      <div class="dell-tooltip-group">
-        <div class="dell-tooltip-label">Capture</div>
-        <div class="dell-tooltip-buttons">
-          <button class="dell-tooltip-btn" id="screenshotBtn" title="Take Screenshot">
-            <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4-8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM3 14h10V2H3v12z"/>
-            </svg>
-          </button>
-          <button class="dell-tooltip-btn" id="recordBtn" title="Start Recording">
-            <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16" id="recordIcon">
-              <circle cx="8" cy="8" r="3"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-      
-      <!-- Vertical Divider -->
-      <div style="width: 1px; height: 32px; background: rgba(255, 255, 255, 0.2);"></div>
-      
-      <!-- App Launcher -->
-      <div class="dell-tooltip-group">
-        <div class="dell-tooltip-label">Apps</div>
-        <div class="dell-tooltip-buttons">
-          <button class="dell-tooltip-btn" id="appsBtn" title="Launch Applications">
-            <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M0 2a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm9 0a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2V2zM0 11a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-3zm9 0a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2v-3z"/>
-            </svg>
-          </button>
-          <div class="dell-apps-dropdown" id="appsDropdown">
-            <div class="dell-app-item" data-app="powershell">PowerShell</div>
-            <div class="dell-app-item" data-app="cmd">Command Prompt</div>
-            <div class="dell-app-item" data-app="notepad">Notepad</div>
-            <div class="dell-app-item" data-app="eventvwr">Event Viewer</div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Vertical Divider -->
-      <div style="width: 1px; height: 32px; background: rgba(255, 255, 255, 0.2);"></div>
-      
-      <!-- Status -->
-      <div class="dell-tooltip-group">
-        <div class="dell-tooltip-label">Status</div>
-        <div class="dell-tooltip-status">
-          <div class="dell-status-dot" id="statusDot"></div>
-          <span id="statusText">Connecting...</span>
-        </div>
-      </div>
-      
-      <!-- Vertical Divider -->
-      <div style="width: 1px; height: 32px; background: rgba(255, 255, 255, 0.2);"></div>
-      
-      <!-- Disconnect -->
-      <div class="dell-tooltip-group">
-        <button class="dell-tooltip-btn dell-disconnect-btn" id="disconnectBtn" title="Disconnect">
-          <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
-          </svg>
-          Disconnect
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Fullscreen Overlay Header -->
-  <div class="dell-fullscreen-overlay" id="fullscreenOverlay">
-    <div class="dell-logo">
-      <div class="dell-logo-icon">D</div>
-      Dell Remote Desktop
-    </div>
-    <div class="dell-connection-stats">
-      <div class="dell-stat-item">
-        <span>📊</span>
-        <span id="bitrateInfo">0 kbps</span>
-      </div>
-      <div class="dell-stat-item">
-        <span>⚡</span>
-        <span id="latencyInfo">0 ms</span>
-      </div>
-    </div>
-    <button class="dell-btn" id="exitFullscreenBtn" title="Exit Fullscreen (ESC)" aria-label="Exit Fullscreen">
-      <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
-        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
-      </svg>
-      Exit
-    </button>
-  </div>
-
-  <!-- Video Container -->
-  <div class="dell-video-container" id="videoContainer">
-    <div class="dell-loading-screen" id="loadingScreen">
-      <div class="dell-spinner"></div>
-      <div class="dell-loading-text">Connecting to Remote Desktop</div>
-      <div class="dell-loading-subtext">Establishing secure connection...</div>
-    </div>
+// CHANGE THIS TO THE ACTUAL SIGNALING SERVER IP
+const SIGNALING_SERVER_URL = "wss://signalling-server-oxaw.onrender.com/ws";
+const DEVICE_ID = "device001";
+const AUTH_CODE = "secret";
+
+// Enhanced ICE server configuration for cross-network connectivity
+const rtcConfig = {
+   iceServers: [
+  {
+    urls: "stun:stun.relay.metered.ca:80",
+  },
+  // {
+  //   urls: "turn:global.relay.metered.ca:80",
+  //   username: "6d53bf5674ee887bb0119be8",
+  //   credential: "yJMy/8xpXCBqwy6a",
+  // },
+  // {
+  //   urls: "turn:global.relay.metered.ca:80?transport=tcp",
+  //   username: "6d53bf5674ee887bb0119be8",
+  //   credential: "yJMy/8xpXCBqwy6a",
+  // },
+  // {
+  //   urls: "turn:global.relay.metered.ca:443",
+  //   username: "6d53bf5674ee887bb0119be8",
+  //   credential: "yJMy/8xpXCBqwy6a",
+  // },
+  // {
+  //   urls: "turns:global.relay.metered.ca:443?transport=tcp",
+  //   username: "6d53bf5674ee887bb0119be8",
+  //   credential: "yJMy/8xpXCBqwy6a",
+  // },
+],
+  iceCandidatePoolSize: 10,
+  iceTransportPolicy: 'all'  // Allow both STUN and TURN candidates
+};
+
+// UI Elements
+const videoEl = document.getElementById("remoteVideo");
+const videoContainer = document.getElementById("videoContainer");
+const videoWrapper = document.getElementById("videoWrapper");
+const loadingScreen = document.getElementById("loadingScreen");
+const statusText = document.getElementById("statusText");
+const statusDot = document.getElementById("statusDot");
+const counterDisplay = document.getElementById("counterDisplay");
+const qualityInfo = document.getElementById("qualityInfo");
+const fullscreenOverlay = document.getElementById("fullscreenOverlay");
+
+// Toolbar buttons (only the ones that exist in the minimal header)
+const fitScreenBtn = document.getElementById("fitScreenBtn");
+const fullscreenBtn = document.getElementById("fullscreenBtn");
+const exitFullscreenBtn = document.getElementById("exitFullscreenBtn");
+const disconnectBtn = document.getElementById("disconnectBtn");
+
+// New controls
+const screenshotBtn = document.getElementById("screenshotBtn");
+const recordBtn = document.getElementById("recordBtn");
+const recordIcon = document.getElementById("recordIcon");
+const appsBtn = document.getElementById("appsBtn");
+const appsDropdown = document.getElementById("appsDropdown");
+
+// Tooltip elements
+const tooltipTrigger = document.getElementById("tooltipTrigger");
+const tooltipPanel = document.getElementById("tooltipPanel");
+
+// Optional buttons (may not exist in minimal header)
+const actualSizeBtn = document.getElementById("actualSizeBtn");
+const reconnectBtn = document.getElementById("reconnectBtn");
+const settingsBtn = document.getElementById("settingsBtn");
+const aboutBtn = document.getElementById("aboutBtn");
+
+let socket, pc, dataChannel;
+let isFullscreen = false;
+let connectionStats = { bitrate: 0, latency: 0 };
+
+// Recording variables
+let mediaRecorder = null;
+let recordedChunks = [];
+let isRecording = false;
+
+// Input capture variables
+let isInputEnabled = false;
+let isDragging = false;
+let mouseDataChannel = null;
+let keyboardDataChannel = null;
+
+function log(...args) { console.log("[Dell Remote Desktop]", ...args); }
+
+function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.className = `dell-toast ${type}`;
+  toast.innerHTML = `
+    <div style="font-weight: 500; margin-bottom: 4px;">Dell Remote Desktop</div>
+    <div style="font-size: var(--dell-font-size-sm); color: var(--dell-gray-600);">${message}</div>
+  `;
+  
+  document.body.appendChild(toast);
+  
+  setTimeout(() => toast.classList.add('show'), 100);
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+function updateStatus(text, connected = false) { 
+  if (statusText) {
+    statusText.textContent = text;
+  }
+  if (statusDot) {
+    statusDot.className = connected ? 'dell-status-dot connected' : 'dell-status-dot';
+  }
+  
+  if (connected && loadingScreen) {
+    loadingScreen.classList.add('hidden');
+    if (screenshotBtn) {
+      screenshotBtn.disabled = false;
+    }
+    showToast('Connection established successfully', 'success');
+  }
+}
+
+function updateCounter(text) { 
+  if (counterDisplay) {
+    counterDisplay.textContent = text;
+    counterDisplay.classList.add('visible');
+  }
+}
+
+function updateQuality(info) {
+  if (qualityInfo) {
+    qualityInfo.textContent = info;
+  }
+}
+
+// Fullscreen functionality
+function toggleFullscreen() {
+  if (!isFullscreen) {
+    enterFullscreen();
+  } else {
+    exitFullscreen();
+  }
+}
+
+function enterFullscreen() {
+  document.body.classList.add('fullscreen');
+  isFullscreen = true;
+  if (fullscreenBtn) {
+    fullscreenBtn.classList.add('active');
+  }
+  
+  // Show fullscreen overlay briefly
+  if (fullscreenOverlay) {
+    setTimeout(() => {
+      fullscreenOverlay.classList.add('visible');
+      setTimeout(() => {
+        if (isFullscreen) fullscreenOverlay.classList.remove('visible');
+      }, 3000);
+    }, 100);
+  }
+}
+
+function exitFullscreen() {
+  document.body.classList.remove('fullscreen');
+  if (fullscreenOverlay) {
+    fullscreenOverlay.classList.remove('visible');
+  }
+  isFullscreen = false;
+  if (fullscreenBtn) {
+    fullscreenBtn.classList.remove('active');
+  }
+}
+
+// Video scaling functions
+function fitToScreen() {
+  videoEl.style.width = '100%';
+  videoEl.style.height = '100%';
+  videoEl.style.objectFit = 'contain';
+  if (fitScreenBtn) {
+    fitScreenBtn.classList.add('active');
+  }
+  if (actualSizeBtn) {
+    actualSizeBtn.classList.remove('active');
+  }
+}
+
+function actualSize() {
+  videoEl.style.width = 'auto';
+  videoEl.style.height = 'auto';
+  videoEl.style.objectFit = 'none';
+  if (actualSizeBtn) {
+    actualSizeBtn.classList.add('active');
+  }
+  if (fitScreenBtn) {
+    fitScreenBtn.classList.remove('active');
+  }
+}
+
+// Screenshot functionality
+function takeScreenshot() {
+  if (!videoEl.videoWidth) return;
+  
+  const canvas = document.createElement('canvas');
+  canvas.width = videoEl.videoWidth;
+  canvas.height = videoEl.videoHeight;
+  
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(videoEl, 0, 0);
+  
+  const link = document.createElement('a');
+  link.download = `dell-remote-screenshot-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.png`;
+  link.href = canvas.toDataURL();
+  link.click();
+  
+  showToast('Screenshot saved successfully', 'success');
+}
+
+// Screen recording functionality
+function toggleRecording() {
+  if (!isRecording) {
+    startRecording();
+  } else {
+    stopRecording();
+  }
+}
+
+function startRecording() {
+  if (!videoEl.srcObject) {
+    showToast('No video stream available for recording', 'error');
+    return;
+  }
+
+  try {
+    recordedChunks = [];
+    const stream = videoEl.srcObject;
     
-    <div class="dell-video-wrapper" id="videoWrapper">
-      <video id="remoteVideo" autoplay playsinline muted></video>
-      <div class="dell-counter-display" id="counterDisplay">
-        Waiting for data...
-      </div>
-    </div>
-  </div>
+    // Create MediaRecorder with optimal settings
+    const options = {
+      mimeType: 'video/webm;codecs=vp9,opus'
+    };
+    
+    // Fallback MIME types if VP9 is not supported
+    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+      options.mimeType = 'video/webm;codecs=vp8,opus';
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        options.mimeType = 'video/webm';
+      }
+    }
+    
+    mediaRecorder = new MediaRecorder(stream, options);
+    
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        recordedChunks.push(event.data);
+      }
+    };
+    
+    mediaRecorder.onstop = () => {
+      saveRecording();
+    };
+    
+    mediaRecorder.start(1000); // Collect data every second
+    isRecording = true;
+    
+    // Update UI
+    if (recordBtn) {
+      recordBtn.classList.add('recording');
+      recordBtn.title = 'Stop Recording';
+    }
+    if (recordIcon) {
+      recordIcon.innerHTML = '<rect x="6" y="6" width="4" height="4" rx="1"/>';
+    }
+    
+    showToast('Recording started', 'success');
+    log('Recording started');
+    
+  } catch (error) {
+    log('Error starting recording:', error);
+    showToast('Failed to start recording: ' + error.message, 'error');
+  }
+}
 
-  <!-- MessagePack for efficient binary data encoding -->
-  <script src="https://cdn.jsdelivr.net/npm/msgpack-lite@0.1.26/dist/msgpack.min.js"></script>
-  <script src="webrtc.js"></script>
-</body>
-</html>
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+  }
+  
+  isRecording = false;
+  
+  // Update UI
+  if (recordBtn) {
+    recordBtn.classList.remove('recording');
+    recordBtn.title = 'Start Recording';
+  }
+  if (recordIcon) {
+    recordIcon.innerHTML = '<circle cx="8" cy="8" r="3"/>';
+  }
+  
+  showToast('Recording stopped', 'success');
+  log('Recording stopped');
+}
+
+function saveRecording() {
+  if (recordedChunks.length === 0) {
+    showToast('No recording data to save', 'warning');
+    return;
+  }
+  
+  const blob = new Blob(recordedChunks, { type: 'video/webm' });
+  const url = URL.createObjectURL(blob);
+  
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `dell-remote-recording-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.webm`;
+  link.click();
+  
+  // Clean up
+  URL.revokeObjectURL(url);
+  recordedChunks = [];
+  
+  showToast('Recording saved successfully', 'success');
+  log('Recording saved');
+}
+
+// App launcher functionality
+function setupAppLauncher() {
+  if (!appsBtn || !appsDropdown) return;
+  
+  let isDropdownOpen = false;
+  
+  // Toggle dropdown
+  appsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    isDropdownOpen = !isDropdownOpen;
+    appsDropdown.classList.toggle('show', isDropdownOpen);
+  });
+  
+  // Close dropdown when clicking outside
+  document.addEventListener('click', () => {
+    if (isDropdownOpen) {
+      isDropdownOpen = false;
+      appsDropdown.classList.remove('show');
+    }
+  });
+  
+  // Handle app selection
+  appsDropdown.addEventListener('click', (e) => {
+    if (e.target.classList.contains('dell-app-item')) {
+      const appName = e.target.dataset.app;
+      launchRemoteApp(appName);
+      isDropdownOpen = false;
+      appsDropdown.classList.remove('show');
+    }
+  });
+}
+
+function launchRemoteApp(appName) {
+  log('Attempting to launch app:', appName);
+  log('DataChannel status:', {
+    exists: !!dataChannel,
+    readyState: dataChannel ? dataChannel.readyState : 'null',
+    label: dataChannel ? dataChannel.label : 'null'
+  });
+  
+  if (!dataChannel) {
+    showToast('Data channel not established yet', 'error');
+    log('Error: dataChannel is null');
+    return;
+  }
+  
+  if (dataChannel.readyState !== 'open') {
+    showToast(`Data channel not ready (${dataChannel.readyState})`, 'error');
+    log('Error: dataChannel readyState is', dataChannel.readyState);
+    return;
+  }
+  
+  const appCommands = {
+    powershell: 'powershell.exe',
+    cmd: 'cmd.exe',
+    notepad: 'notepad.exe',
+    eventvwr: 'eventvwr.msc'
+  };
+  
+  const appNames = {
+    powershell: 'PowerShell',
+    cmd: 'Command Prompt',
+    notepad: 'Notepad',
+    eventvwr: 'Event Viewer'
+  };
+  
+  const command = appCommands[appName];
+  if (!command) {
+    showToast('Unknown application: ' + appName, 'error');
+    return;
+  }
+  
+  try {
+    // Send the command directly as used by the server
+    const simpleMessage = `openapplication-${command}`;
+    dataChannel.send(simpleMessage);
+    
+    showToast(`Launching ${appNames[appName] || appName}...`, 'info');
+    log('Sent app launch message:', simpleMessage);
+    
+  } catch (error) {
+    log('Error sending app launch command:', error);
+    showToast('Failed to launch application', 'error');
+  }
+}
+
+// Data channel setup for remote commands
+function setupDataChannel() {
+  if (!pc) return;
+  
+  // Don't create a data channel on client side - wait for server to create one
+  log('Setting up data channel handlers (waiting for server-created channel)');
+}
+
+function handleDataChannelMessage(message) {
+  switch (message.type) {
+    case 'app_launched':
+      showToast(`Application launched: ${message.app}`, 'success');
+      break;
+    case 'app_launch_failed':
+      showToast(`Failed to launch: ${message.app}`, 'error');
+      break;
+    case 'status':
+      updateCounter(`Remote: ${message.status}`);
+      break;
+    default:
+      log('Unknown data channel message:', message);
+  }
+}
+
+// Input event capture functions based on old_webrtc.js
+function initializeInputEventListeners() {
+  if (!dataChannel || dataChannel.readyState !== 'open') {
+    log('Cannot initialize input listeners - data channel not ready');
+    return;
+  }
+  
+  log('Initializing mouse and keyboard event listeners');
+  isInputEnabled = true;
+  
+  // Mouse drag tracking
+  document.addEventListener('mousedown', (event) => {
+    if (!isInputEnabled || !shouldCaptureInput(event)) return;
+    isDragging = true;
+  });
+  
+  document.addEventListener('mouseup', (event) => {
+    if (!isInputEnabled || !shouldCaptureInput(event)) return;
+    isDragging = false;
+  });
+  
+  // Mouse wheel/scroll events
+  document.addEventListener('wheel', (event) => {
+    if (!isInputEnabled || !shouldCaptureInput(event)) return;
+    
+    event.preventDefault();
+    const scrollDirection = event.deltaY > 0 ? 'down' : 'up';
+    const data = {
+      type: 'scroll',
+      scrollDirection: scrollDirection
+    };
+    
+    sendMouseData(data);
+  }, { passive: false });
+  
+  // Mouse movement
+  document.addEventListener('mousemove', (event) => {
+    if (!isInputEnabled || !shouldCaptureInput(event)) return;
+    
+    const videoRect = videoEl.getBoundingClientRect();
+    const localX = event.clientX - videoRect.left;
+    const localY = event.clientY - videoRect.top;
+    
+    // Only send mouse events if cursor is over the video
+    if (localX >= 0 && localY >= 0 && localX <= videoRect.width && localY <= videoRect.height) {
+      const data = {
+        type: 'mouse_move',
+        x: localX,
+        y: localY,
+        clientWidth: videoRect.width,
+        clientHeight: videoRect.height,
+        drag: isDragging
+      };
+      
+      sendMouseData(data);
+    }
+  });
+  
+  // Mouse clicks
+  document.addEventListener('click', (event) => {
+    if (!isInputEnabled || !shouldCaptureInput(event)) return;
+    
+    event.preventDefault();
+    const data = {
+      type: 'left_click'
+    };
+    
+    sendMouseData(data);
+  });
+  
+  // Right-click context menu
+  document.addEventListener('contextmenu', (event) => {
+    if (!isInputEnabled || !shouldCaptureInput(event)) return;
+    
+    event.preventDefault();
+    const data = {
+      type: 'right_click'
+    };
+    
+    sendMouseData(data);
+  });
+  
+  // Keyboard events
+  document.addEventListener('keydown', handleKeyboardEvent);
+  document.addEventListener('keyup', handleKeyboardEvent);
+  
+  showToast('Remote input control enabled', 'success');
+}
+
+function shouldCaptureInput(event) {
+  // Don't capture input events on UI controls
+  const target = event.target;
+  
+  // Allow input on video and video container
+  if (target === videoEl || target === videoContainer || target === videoWrapper) {
+    return true;
+  }
+  
+  // Don't capture on buttons, inputs, or other interactive elements
+  if (target.tagName === 'BUTTON' || 
+      target.tagName === 'INPUT' || 
+      target.tagName === 'SELECT' ||
+      target.classList.contains('dell-btn') ||
+      target.classList.contains('dell-tooltip-btn') ||
+      target.closest('.dell-tooltip-panel') ||
+      target.closest('.dell-apps-dropdown')) {
+    return false;
+  }
+  
+  return true;
+}
+
+function handleKeyboardEvent(event) {
+  if (!isInputEnabled || !shouldCaptureInput(event)) return;
+  
+  // Don't capture certain system keys
+  if (event.key === 'F11' || event.key === 'Escape' || 
+      (event.ctrlKey && (event.key === 'f' || event.key === '1'))) {
+    return; // Let these be handled by the local system
+  }
+  
+  event.preventDefault();
+  
+  const action = event.type === 'keydown' ? 'press' : 'release';
+  const {
+    shiftKey,
+    altKey,
+    ctrlKey,
+    key,
+    code
+  } = event;
+  
+  const data = {
+    k: key.toLowerCase(),
+    s: shiftKey,
+    a: altKey,
+    c: ctrlKey,
+    kc: code,
+    action: action
+  };
+  
+  sendKeyboardData(data);
+}
+
+function sendMouseData(data) {
+  console.log('📭 CLIENT: Sending mouse data:', data);
+  
+  if (!dataChannel || dataChannel.readyState !== 'open') {
+    console.error('❌ CLIENT: DataChannel not ready for mouse data:', {
+      exists: !!dataChannel,
+      readyState: dataChannel ? dataChannel.readyState : 'null'
+    });
+    return;
+  }
+  
+  try {
+    // Use msgpack for efficient binary encoding
+    const encodedData = msgpack.encode(data);
+    console.log('📦 CLIENT: Mouse data encoded to binary:', encodedData.length, 'bytes');
+    dataChannel.send(encodedData);
+    console.log('✅ CLIENT: Mouse data sent successfully');
+  } catch (error) {
+    console.error('❌ CLIENT: Error sending mouse data:', error);
+    log('Error sending mouse data:', error);
+  }
+}
+
+function sendKeyboardData(data) {
+  console.log('⌨️ CLIENT: Sending keyboard data:', data);
+  
+  if (!dataChannel || dataChannel.readyState !== 'open') {
+    console.error('❌ CLIENT: DataChannel not ready for keyboard data:', {
+      exists: !!dataChannel,
+      readyState: dataChannel ? dataChannel.readyState : 'null'
+    });
+    return;
+  }
+  
+  try {
+    // Use msgpack for efficient binary encoding
+    const encodedData = msgpack.encode(data);
+    console.log('📦 CLIENT: Keyboard data encoded to binary:', encodedData.length, 'bytes');
+    dataChannel.send(encodedData);
+    console.log('✅ CLIENT: Keyboard data sent successfully');
+  } catch (error) {
+    console.error('❌ CLIENT: Error sending keyboard data:', error);
+    log('Error sending keyboard data:', error);
+  }
+}
+
+function disableInputCapture() {
+  isInputEnabled = false;
+  log('Remote input capture disabled');
+  showToast('Remote input control disabled', 'warning');
+}
+
+// Event listeners setup function
+function setupEventListeners() {
+  // Only bind event listeners for buttons that exist
+  if (fitScreenBtn) {
+    fitScreenBtn.addEventListener('click', fitToScreen);
+  }
+  
+  if (fullscreenBtn) {
+    fullscreenBtn.addEventListener('click', toggleFullscreen);
+  }
+  
+  if (actualSizeBtn) {
+    actualSizeBtn.addEventListener('click', actualSize);
+  }
+  
+  if (exitFullscreenBtn) {
+    exitFullscreenBtn.addEventListener('click', exitFullscreen);
+  }
+  
+  if (screenshotBtn) {
+    screenshotBtn.addEventListener('click', takeScreenshot);
+  }
+  
+  if (recordBtn) {
+    recordBtn.addEventListener('click', toggleRecording);
+  }
+  
+  if (reconnectBtn) {
+    reconnectBtn.addEventListener('click', () => {
+      showToast('Reconnecting...', 'warning');
+      teardown();
+      connectSignaling();
+    });
+  }
+  
+  if (disconnectBtn) {
+    disconnectBtn.addEventListener('click', () => {
+      disconnect();
+    });
+  }
+
+  if (settingsBtn) {
+    settingsBtn.addEventListener('click', () => {
+      showToast('Settings panel coming soon!', 'info');
+    });
+  }
+
+  if (aboutBtn) {
+    aboutBtn.addEventListener('click', () => {
+      showToast('Dell Remote Desktop v1.0 - Powered by WebRTC', 'info');
+    });
+  }
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    switch (e.key) {
+      case 'F11':
+        e.preventDefault();
+        toggleFullscreen();
+        break;
+      case 'Escape':
+        if (isFullscreen) {
+          exitFullscreen();
+        }
+        break;
+      case 'f':
+        if (e.ctrlKey) {
+          e.preventDefault();
+          fitToScreen();
+        }
+        break;
+      case '1':
+        if (e.ctrlKey) {
+          e.preventDefault();
+          actualSize();
+        }
+        break;
+    }
+  });
+
+  // Mouse events for fullscreen overlay
+  if (videoContainer) {
+    videoContainer.addEventListener('mousemove', () => {
+      if (isFullscreen && fullscreenOverlay) {
+        fullscreenOverlay.classList.add('visible');
+        clearTimeout(fullscreenOverlay.hideTimeout);
+        fullscreenOverlay.hideTimeout = setTimeout(() => {
+          fullscreenOverlay.classList.remove('visible');
+        }, 3000);
+      }
+    });
+  }
+  
+  // Tooltip functionality
+  if (tooltipTrigger && tooltipPanel) {
+    let tooltipTimeout;
+    
+    // Show tooltip on mouse enter
+    tooltipTrigger.addEventListener('mouseenter', () => {
+      clearTimeout(tooltipTimeout);
+      tooltipPanel.classList.add('show');
+    });
+    
+    // Hide tooltip on mouse leave with delay
+    tooltipTrigger.addEventListener('mouseleave', () => {
+      tooltipTimeout = setTimeout(() => {
+        tooltipPanel.classList.remove('show');
+      }, 300); // Small delay to allow moving to tooltip
+    });
+    
+    // Keep tooltip open when hovering over it
+    tooltipPanel.addEventListener('mouseenter', () => {
+      clearTimeout(tooltipTimeout);
+    });
+    
+    // Hide tooltip when leaving the panel
+    tooltipPanel.addEventListener('mouseleave', () => {
+      tooltipTimeout = setTimeout(() => {
+        tooltipPanel.classList.remove('show');
+      }, 300);
+    });
+  }
+}
+
+function connectSignaling() {
+  updateStatus("Connecting to signaling server...");
+  if (loadingScreen) {
+    loadingScreen.classList.remove('hidden');
+  }
+  
+  socket = new WebSocket(SIGNALING_SERVER_URL);
+  socket.binaryType = "arraybuffer";
+
+  socket.onopen = () => {
+    log("Connected to signaling server");
+    updateStatus("Connected, registering…");
+    // FIXED: Use the same protocol as client.js
+    socket.send(JSON.stringify({ deviceId: DEVICE_ID, authCode: AUTH_CODE }));
+  };
+
+  socket.onmessage = async (event) => {
+    let data = event.data;
+    if (data instanceof Blob) data = await data.text();
+    if (data instanceof ArrayBuffer) data = new TextDecoder().decode(data);
+
+    let msg;
+    try { msg = JSON.parse(data); } catch {
+      log("Invalid JSON from signaling: ", data);
+      return;
+    }
+
+    log("Signal received:", msg.type);
+
+    switch (msg.type) {
+      case "paired":
+        log("Paired with host, waiting for offer");
+        updateStatus("Paired, waiting for screen data...");
+        break;
+
+      case "offer":
+        await handleOffer(msg);
+        break;
+
+      case "candidate":
+        if (pc && msg.candidate) {
+          try {
+            await pc.addIceCandidate(msg.candidate);
+            log("ICE candidate added:", msg.candidate.candidate?.substring(0, 50) + "...");
+          } catch (e) {
+            log("ICE candidate error:", e);
+          }
+        }
+        break;
+
+      case "partner-disconnected":
+        log("Partner disconnected");
+        updateStatus("Host disconnected");
+        showToast('Remote host disconnected', 'warning');
+        teardown();
+        break;
+
+      case "error":
+        log("Signaling error:", msg.message || msg);
+        updateStatus("Error: " + (msg.message || "unknown"));
+        showToast('Connection error: ' + (msg.message || "unknown"), 'error');
+        teardown();
+        break;
+
+      default:
+        log("Unknown message type", msg.type);
+    }
+  };
+
+  socket.onclose = () => {
+    log("Signaling connection closed");
+    updateStatus("Signaling disconnected");
+    showToast('Connection lost, reconnecting...', 'warning');
+    // Auto-reconnect after 3 seconds
+    setTimeout(connectSignaling, 3000);
+  };
+
+  socket.onerror = (e) => {
+    log("WebSocket error:", e);
+    updateStatus("Connection failed");
+    showToast('Connection failed', 'error');
+  };
+}
+
+async function handleOffer(msg) {
+  log("Received offer");
+  updateStatus("Receiving media...");
+
+  if (pc) teardown();
+
+  // FIXED: Use same ICE configuration as client
+  pc = new RTCPeerConnection(rtcConfig);
+  const remoteStream = new MediaStream();
+  videoEl.srcObject = remoteStream;
+
+  pc.ontrack = e => {
+    log("Track received:", e.track.kind);
+    remoteStream.addTrack(e.track);
+    updateStatus("Streaming started", true);
+    updateQuality("HD Quality • Active");
+    fitToScreen(); // Default to fit screen
+    
+    // Setup data channel for remote commands
+    setupDataChannel();
+  };
+
+  pc.onicecandidate = e => {
+    if (e.candidate) {
+      socket.send(JSON.stringify({ type: "candidate", candidate: e.candidate }));
+      log("Sent ICE candidate:", e.candidate.candidate?.substring(0, 50) + "...");
+    }
+  };
+
+  pc.oniceconnectionstatechange = () => {
+    log("ICE state:", pc.iceConnectionState);
+    
+    if (pc.iceConnectionState === 'connected') {
+      updateStatus("Connected and streaming", true);
+      updateQuality("HD Quality • Connected");
+    } else if (['disconnected', 'failed', 'closed'].includes(pc.iceConnectionState)) {
+      updateStatus("Connection lost - " + pc.iceConnectionState);
+      updateQuality("Connection issues...");
+      if (pc.iceConnectionState === 'failed') {
+        log("ICE connection failed - this usually indicates NAT/firewall issues");
+        showToast('Connection failed - check network settings', 'error');
+      }
+    }
+  };
+
+  pc.onconnectionstatechange = () => {
+    log("Connection state:", pc.connectionState);
+  };
+
+  // Handle incoming DataChannel from server
+  pc.ondatachannel = event => {
+    const channel = event.channel;
+    log("DataChannel received from server:", channel.label);
+    
+    // Store the data channel reference for sending messages
+    if (channel.label === 'screen-share') {
+      dataChannel = channel;
+      
+      channel.onopen = () => {
+        log('🟢 Server data channel opened - remote commands available');
+        log('DataChannel details:', {
+          label: channel.label,
+          readyState: channel.readyState,
+          protocol: channel.protocol
+        });
+        if (appsBtn) {
+          appsBtn.disabled = false;
+        }
+        
+        // Initialize input event listeners for mouse and keyboard capture
+        initializeInputEventListeners();
+        
+        showToast('Remote control ready - apps & input enabled', 'success');
+      };
+      
+      channel.onclose = () => {
+        log('Server data channel closed');
+        if (appsBtn) {
+          appsBtn.disabled = true;
+        }
+        dataChannel = null;
+      };
+      
+      channel.onerror = (error) => {
+        log('Server data channel error:', error);
+      };
+      
+      channel.onmessage = e => {
+        log("DataChannel message received:", e.data);
+        try {
+          const message = JSON.parse(e.data);
+          handleDataChannelMessage(message);
+        } catch (ex) {
+          log('Non-JSON data channel message:', e.data);
+        }
+      };
+    } else {
+      // Handle other data channels if needed
+      channel.onopen = () => {
+        log("Other DataChannel opened:", channel.label);
+      };
+      channel.onmessage = e => {
+        log("Other DataChannel message:", e.data);
+        updateCounter(`Data: ${e.data}`);
+      };
+      channel.onclose = () => {
+        log("Other DataChannel closed:", channel.label);
+      };
+    }
+  };
+
+  try {
+    await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: msg.sdp }));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+
+    log("Sending answer");
+    socket.send(JSON.stringify({ type: "answer", sdp: answer.sdp }));
+  } catch (error) {
+    log("Error handling offer:", error);
+    updateStatus("Error: " + error.message);
+    updateQuality("Connection failed");
+    showToast('Failed to establish connection', 'error');
+  }
+}
+
+// Disconnect function - cleanly disconnect and notify signaling server
+function disconnect() {
+  log("User initiated disconnect");
+  showToast('Disconnecting...', 'warning');
+  
+  // Send disconnect message to signaling server to clear the room
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: 'disconnect', deviceId: DEVICE_ID }));
+  }
+  
+  // Perform local cleanup
+  teardown();
+  
+  // Close signaling connection
+  if (socket) {
+    socket.close();
+    socket = null;
+  }
+  
+  updateStatus("Disconnected", false);
+  showToast('Successfully disconnected', 'success');
+}
+
+function teardown() {
+  if (pc) {
+    pc.getSenders().forEach(s => s.track?.stop());
+    pc.close();
+    pc = null;
+  }
+  videoEl.srcObject = null;
+  updateCounter("Disconnected");
+  updateQuality("Not connected");
+  if (screenshotBtn) {
+    screenshotBtn.disabled = true;
+  }
+  if (loadingScreen) {
+    loadingScreen.classList.remove('hidden');
+  }
+}
+
+// Enhanced error handling and connection monitoring
+window.addEventListener('beforeunload', teardown);
+
+// Initialize everything when DOM is loaded
+function initialize() {
+  setupEventListeners();
+  setupAppLauncher();
+  connectSignaling();
+  
+  // Connection quality monitoring
+  setInterval(() => {
+    if (pc && pc.iceConnectionState === 'connected') {
+      pc.getStats().then(stats => {
+        // Update connection statistics
+        updateQuality("HD Quality • Active");
+      });
+    }
+  }, 5000);
+}
+
+// Start when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initialize);
+} else {
+  initialize();
+}
