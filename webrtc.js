@@ -51,16 +51,27 @@ const fullscreenBtn = document.getElementById("fullscreenBtn");
 const exitFullscreenBtn = document.getElementById("exitFullscreenBtn");
 const disconnectBtn = document.getElementById("disconnectBtn");
 
+// New controls
+const screenshotBtn = document.getElementById("screenshotBtn");
+const recordBtn = document.getElementById("recordBtn");
+const recordIcon = document.getElementById("recordIcon");
+const appsBtn = document.getElementById("appsBtn");
+const appsDropdown = document.getElementById("appsDropdown");
+
 // Optional buttons (may not exist in minimal header)
 const actualSizeBtn = document.getElementById("actualSizeBtn");
 const reconnectBtn = document.getElementById("reconnectBtn");
-const screenshotBtn = document.getElementById("screenshotBtn");
 const settingsBtn = document.getElementById("settingsBtn");
 const aboutBtn = document.getElementById("aboutBtn");
 
-let socket, pc;
+let socket, pc, dataChannel;
 let isFullscreen = false;
 let connectionStats = { bitrate: 0, latency: 0 };
+
+// Recording variables
+let mediaRecorder = null;
+let recordedChunks = [];
+let isRecording = false;
 
 function log(...args) { console.log("[Dell Remote Desktop]", ...args); }
 
@@ -99,12 +110,16 @@ function updateStatus(text, connected = false) {
 }
 
 function updateCounter(text) { 
-  counterDisplay.textContent = text;
-  counterDisplay.classList.add('visible');
+  if (counterDisplay) {
+    counterDisplay.textContent = text;
+    counterDisplay.classList.add('visible');
+  }
 }
 
 function updateQuality(info) {
-  qualityInfo.textContent = info;
+  if (qualityInfo) {
+    qualityInfo.textContent = info;
+  }
 }
 
 // Fullscreen functionality
@@ -189,6 +204,246 @@ function takeScreenshot() {
   showToast('Screenshot saved successfully', 'success');
 }
 
+// Screen recording functionality
+function toggleRecording() {
+  if (!isRecording) {
+    startRecording();
+  } else {
+    stopRecording();
+  }
+}
+
+function startRecording() {
+  if (!videoEl.srcObject) {
+    showToast('No video stream available for recording', 'error');
+    return;
+  }
+
+  try {
+    recordedChunks = [];
+    const stream = videoEl.srcObject;
+    
+    // Create MediaRecorder with optimal settings
+    const options = {
+      mimeType: 'video/webm;codecs=vp9,opus'
+    };
+    
+    // Fallback MIME types if VP9 is not supported
+    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+      options.mimeType = 'video/webm;codecs=vp8,opus';
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        options.mimeType = 'video/webm';
+      }
+    }
+    
+    mediaRecorder = new MediaRecorder(stream, options);
+    
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        recordedChunks.push(event.data);
+      }
+    };
+    
+    mediaRecorder.onstop = () => {
+      saveRecording();
+    };
+    
+    mediaRecorder.start(1000); // Collect data every second
+    isRecording = true;
+    
+    // Update UI
+    if (recordBtn) {
+      recordBtn.classList.add('recording');
+      recordBtn.title = 'Stop Recording';
+    }
+    if (recordIcon) {
+      recordIcon.innerHTML = '<rect x="6" y="6" width="4" height="4" rx="1"/>';
+    }
+    
+    showToast('Recording started', 'success');
+    log('Recording started');
+    
+  } catch (error) {
+    log('Error starting recording:', error);
+    showToast('Failed to start recording: ' + error.message, 'error');
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+  }
+  
+  isRecording = false;
+  
+  // Update UI
+  if (recordBtn) {
+    recordBtn.classList.remove('recording');
+    recordBtn.title = 'Start Recording';
+  }
+  if (recordIcon) {
+    recordIcon.innerHTML = '<circle cx="8" cy="8" r="3"/>';
+  }
+  
+  showToast('Recording stopped', 'success');
+  log('Recording stopped');
+}
+
+function saveRecording() {
+  if (recordedChunks.length === 0) {
+    showToast('No recording data to save', 'warning');
+    return;
+  }
+  
+  const blob = new Blob(recordedChunks, { type: 'video/webm' });
+  const url = URL.createObjectURL(blob);
+  
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `dell-remote-recording-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.webm`;
+  link.click();
+  
+  // Clean up
+  URL.revokeObjectURL(url);
+  recordedChunks = [];
+  
+  showToast('Recording saved successfully', 'success');
+  log('Recording saved');
+}
+
+// App launcher functionality
+function setupAppLauncher() {
+  if (!appsBtn || !appsDropdown) return;
+  
+  let isDropdownOpen = false;
+  
+  // Toggle dropdown
+  appsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    isDropdownOpen = !isDropdownOpen;
+    appsDropdown.classList.toggle('show', isDropdownOpen);
+  });
+  
+  // Close dropdown when clicking outside
+  document.addEventListener('click', () => {
+    if (isDropdownOpen) {
+      isDropdownOpen = false;
+      appsDropdown.classList.remove('show');
+    }
+  });
+  
+  // Handle app selection
+  appsDropdown.addEventListener('click', (e) => {
+    if (e.target.classList.contains('dell-app-item')) {
+      const appName = e.target.dataset.app;
+      launchRemoteApp(appName);
+      isDropdownOpen = false;
+      appsDropdown.classList.remove('show');
+    }
+  });
+}
+
+function launchRemoteApp(appName) {
+  if (!dataChannel || dataChannel.readyState !== 'open') {
+    showToast('Data channel not available for remote commands', 'error');
+    return;
+  }
+  
+  const appCommands = {
+    powershell: 'powershell.exe',
+    cmd: 'cmd.exe',
+    notepad: 'notepad.exe',
+    eventvwr: 'eventvwr.msc'
+  };
+  
+  const appNames = {
+    powershell: 'PowerShell',
+    cmd: 'Command Prompt',
+    notepad: 'Notepad',
+    eventvwr: 'Event Viewer'
+  };
+  
+  const command = appCommands[appName];
+  if (!command) {
+    showToast('Unknown application: ' + appName, 'error');
+    return;
+  }
+  
+  try {
+    const message = JSON.stringify({
+      type: 'launch_app',
+      command: command,
+      timestamp: Date.now()
+    });
+    
+    dataChannel.send(message);
+    showToast(`Launching ${appNames[appName] || appName}...`, 'info');
+    log('Sent app launch command:', command);
+    
+  } catch (error) {
+    log('Error sending app launch command:', error);
+    showToast('Failed to launch application', 'error');
+  }
+}
+
+// Data channel setup for remote commands
+function setupDataChannel() {
+  if (!pc) return;
+  
+  try {
+    dataChannel = pc.createDataChannel('commands', {
+      ordered: true
+    });
+    
+    dataChannel.onopen = () => {
+      log('Data channel opened - remote commands available');
+      if (appsBtn) {
+        appsBtn.disabled = false;
+      }
+    };
+    
+    dataChannel.onclose = () => {
+      log('Data channel closed');
+      if (appsBtn) {
+        appsBtn.disabled = true;
+      }
+    };
+    
+    dataChannel.onerror = (error) => {
+      log('Data channel error:', error);
+    };
+    
+    dataChannel.onmessage = (event) => {
+      log('Data channel message received:', event.data);
+      try {
+        const message = JSON.parse(event.data);
+        handleDataChannelMessage(message);
+      } catch (e) {
+        log('Non-JSON data channel message:', event.data);
+      }
+    };
+    
+  } catch (error) {
+    log('Error setting up data channel:', error);
+  }
+}
+
+function handleDataChannelMessage(message) {
+  switch (message.type) {
+    case 'app_launched':
+      showToast(`Application launched: ${message.app}`, 'success');
+      break;
+    case 'app_launch_failed':
+      showToast(`Failed to launch: ${message.app}`, 'error');
+      break;
+    case 'status':
+      updateCounter(`Remote: ${message.status}`);
+      break;
+    default:
+      log('Unknown data channel message:', message);
+  }
+}
+
 // Event listeners setup function
 function setupEventListeners() {
   // Only bind event listeners for buttons that exist
@@ -210,6 +465,10 @@ function setupEventListeners() {
   
   if (screenshotBtn) {
     screenshotBtn.addEventListener('click', takeScreenshot);
+  }
+  
+  if (recordBtn) {
+    recordBtn.addEventListener('click', toggleRecording);
   }
   
   if (reconnectBtn) {
@@ -380,6 +639,9 @@ async function handleOffer(msg) {
     updateStatus("Streaming started", true);
     updateQuality("HD Quality • Active");
     fitToScreen(); // Default to fit screen
+    
+    // Setup data channel for remote commands
+    setupDataChannel();
   };
 
   pc.onicecandidate = e => {
@@ -488,6 +750,7 @@ window.addEventListener('beforeunload', teardown);
 // Initialize everything when DOM is loaded
 function initialize() {
   setupEventListeners();
+  setupAppLauncher();
   connectSignaling();
   
   // Connection quality monitoring
