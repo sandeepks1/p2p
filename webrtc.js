@@ -77,6 +77,12 @@ let mediaRecorder = null;
 let recordedChunks = [];
 let isRecording = false;
 
+// Input capture variables
+let isInputEnabled = false;
+let isDragging = false;
+let mouseDataChannel = null;
+let keyboardDataChannel = null;
+
 function log(...args) { console.log("[Dell Remote Desktop]", ...args); }
 
 function showToast(message, type = 'info') {
@@ -388,22 +394,12 @@ function launchRemoteApp(appName) {
   }
   
   try {
-    const message = JSON.stringify({
-      type: 'launch_app',
-      command: command,
-      timestamp: Date.now()
-    });
-    
-    // Send the JSON message
-    dataChannel.send(message);
-    
-    // Also send the simple format message
-    const simpleMessage = `openapplication-${appNames[appName] || appName}`;
+    // Send the command directly as used by the server
+    const simpleMessage = `openapplication-${command}`;
     dataChannel.send(simpleMessage);
     
     showToast(`Launching ${appNames[appName] || appName}...`, 'info');
-    log('Sent app launch command:', command);
-    log('Sent simple message:', simpleMessage);
+    log('Sent app launch message:', simpleMessage);
     
   } catch (error) {
     log('Error sending app launch command:', error);
@@ -433,6 +429,184 @@ function handleDataChannelMessage(message) {
     default:
       log('Unknown data channel message:', message);
   }
+}
+
+// Input event capture functions based on old_webrtc.js
+function initializeInputEventListeners() {
+  if (!dataChannel || dataChannel.readyState !== 'open') {
+    log('Cannot initialize input listeners - data channel not ready');
+    return;
+  }
+  
+  log('Initializing mouse and keyboard event listeners');
+  isInputEnabled = true;
+  
+  // Mouse drag tracking
+  document.addEventListener('mousedown', (event) => {
+    if (!isInputEnabled || !shouldCaptureInput(event)) return;
+    isDragging = true;
+  });
+  
+  document.addEventListener('mouseup', (event) => {
+    if (!isInputEnabled || !shouldCaptureInput(event)) return;
+    isDragging = false;
+  });
+  
+  // Mouse wheel/scroll events
+  document.addEventListener('wheel', (event) => {
+    if (!isInputEnabled || !shouldCaptureInput(event)) return;
+    
+    event.preventDefault();
+    const scrollDirection = event.deltaY > 0 ? 'down' : 'up';
+    const data = {
+      type: 'scroll',
+      scrollDirection: scrollDirection
+    };
+    
+    sendMouseData(data);
+  }, { passive: false });
+  
+  // Mouse movement
+  document.addEventListener('mousemove', (event) => {
+    if (!isInputEnabled || !shouldCaptureInput(event)) return;
+    
+    const videoRect = videoEl.getBoundingClientRect();
+    const localX = event.clientX - videoRect.left;
+    const localY = event.clientY - videoRect.top;
+    
+    // Only send mouse events if cursor is over the video
+    if (localX >= 0 && localY >= 0 && localX <= videoRect.width && localY <= videoRect.height) {
+      const data = {
+        type: 'mouse_move',
+        x: localX,
+        y: localY,
+        clientWidth: videoRect.width,
+        clientHeight: videoRect.height,
+        drag: isDragging
+      };
+      
+      sendMouseData(data);
+    }
+  });
+  
+  // Mouse clicks
+  document.addEventListener('click', (event) => {
+    if (!isInputEnabled || !shouldCaptureInput(event)) return;
+    
+    event.preventDefault();
+    const data = {
+      type: 'left_click'
+    };
+    
+    sendMouseData(data);
+  });
+  
+  // Right-click context menu
+  document.addEventListener('contextmenu', (event) => {
+    if (!isInputEnabled || !shouldCaptureInput(event)) return;
+    
+    event.preventDefault();
+    const data = {
+      type: 'right_click'
+    };
+    
+    sendMouseData(data);
+  });
+  
+  // Keyboard events
+  document.addEventListener('keydown', handleKeyboardEvent);
+  document.addEventListener('keyup', handleKeyboardEvent);
+  
+  showToast('Remote input control enabled', 'success');
+}
+
+function shouldCaptureInput(event) {
+  // Don't capture input events on UI controls
+  const target = event.target;
+  
+  // Allow input on video and video container
+  if (target === videoEl || target === videoContainer || target === videoWrapper) {
+    return true;
+  }
+  
+  // Don't capture on buttons, inputs, or other interactive elements
+  if (target.tagName === 'BUTTON' || 
+      target.tagName === 'INPUT' || 
+      target.tagName === 'SELECT' ||
+      target.classList.contains('dell-btn') ||
+      target.classList.contains('dell-tooltip-btn') ||
+      target.closest('.dell-tooltip-panel') ||
+      target.closest('.dell-apps-dropdown')) {
+    return false;
+  }
+  
+  return true;
+}
+
+function handleKeyboardEvent(event) {
+  if (!isInputEnabled || !shouldCaptureInput(event)) return;
+  
+  // Don't capture certain system keys
+  if (event.key === 'F11' || event.key === 'Escape' || 
+      (event.ctrlKey && (event.key === 'f' || event.key === '1'))) {
+    return; // Let these be handled by the local system
+  }
+  
+  event.preventDefault();
+  
+  const action = event.type === 'keydown' ? 'press' : 'release';
+  const {
+    shiftKey,
+    altKey,
+    ctrlKey,
+    key,
+    code
+  } = event;
+  
+  const data = {
+    k: key.toLowerCase(),
+    s: shiftKey,
+    a: altKey,
+    c: ctrlKey,
+    kc: code,
+    action: action
+  };
+  
+  sendKeyboardData(data);
+}
+
+function sendMouseData(data) {
+  if (!dataChannel || dataChannel.readyState !== 'open') {
+    return;
+  }
+  
+  try {
+    // Use msgpack for efficient binary encoding
+    const encodedData = msgpack.encode(data);
+    dataChannel.send(encodedData);
+  } catch (error) {
+    log('Error sending mouse data:', error);
+  }
+}
+
+function sendKeyboardData(data) {
+  if (!dataChannel || dataChannel.readyState !== 'open') {
+    return;
+  }
+  
+  try {
+    // Use msgpack for efficient binary encoding
+    const encodedData = msgpack.encode(data);
+    dataChannel.send(encodedData);
+  } catch (error) {
+    log('Error sending keyboard data:', error);
+  }
+}
+
+function disableInputCapture() {
+  isInputEnabled = false;
+  log('Remote input capture disabled');
+  showToast('Remote input control disabled', 'warning');
 }
 
 // Event listeners setup function
@@ -711,7 +885,11 @@ async function handleOffer(msg) {
         if (appsBtn) {
           appsBtn.disabled = false;
         }
-        showToast('Remote app launcher ready', 'success');
+        
+        // Initialize input event listeners for mouse and keyboard capture
+        initializeInputEventListeners();
+        
+        showToast('Remote control ready - apps & input enabled', 'success');
       };
       
       channel.onclose = () => {
