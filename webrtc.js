@@ -1021,9 +1021,54 @@ function initialize() {
   }, 5000);
 }
 
+// Cursor style management for dual cursor display
+function setupCursorToggle() {
+  const cursorBtn = document.getElementById('cursorBtn');
+  const videoContainer = document.getElementById('videoContainer');
+  
+  // Cursor styles: crosshair (default), pointer, grab, default
+  const cursorStyles = [
+    { name: 'crosshair', class: '', title: 'Crosshair Cursor' },
+    { name: 'pointer', class: 'cursor-pointer', title: 'Pointer Cursor' },
+    { name: 'grab', class: 'cursor-grab', title: 'Grab Cursor' },
+    { name: 'default', class: 'cursor-default', title: 'Default Cursor' }
+  ];
+  
+  let currentStyleIndex = 0;
+  
+  cursorBtn.addEventListener('click', () => {
+    // Remove current cursor class
+    cursorStyles.forEach(style => {
+      videoContainer.classList.remove(style.class);
+    });
+    
+    // Cycle to next cursor style
+    currentStyleIndex = (currentStyleIndex + 1) % cursorStyles.length;
+    const currentStyle = cursorStyles[currentStyleIndex];
+    
+    // Apply new cursor class (if not default)
+    if (currentStyle.class) {
+      videoContainer.classList.add(currentStyle.class);
+    }
+    
+    // Update button title
+    cursorBtn.title = `Toggle Cursor Style (${currentStyle.title})`;
+    
+    // Visual feedback
+    cursorBtn.classList.add('active');
+    setTimeout(() => cursorBtn.classList.remove('active'), 200);
+    
+    console.log(`🎯 Cursor style changed to: ${currentStyle.name}`);
+  });
+}
+
 // Start when DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initialize);
+  document.addEventListener('DOMContentLoaded', () => {
+    initialize();
+    setupCursorToggle();
+  });
 } else {
   initialize();
+  setupCursorToggle();
 }
