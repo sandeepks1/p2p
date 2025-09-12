@@ -346,23 +346,25 @@
       opacity: 1;
     }
 
-    /* Fullscreen Overlay */
+    /* Fullscreen Overlay - Completely Transparent */
     .dell-fullscreen-overlay {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
-      background-color: var(--dell-blue-primary);
+      background: rgba(0, 0, 0, 0.05);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       color: white;
-      padding: var(--dell-spacing-md) var(--dell-spacing-lg);
+      padding: var(--dell-spacing-sm) var(--dell-spacing-lg);
       display: none;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
       z-index: 2000;
       opacity: 0;
       transform: translateY(-100%);
       transition: all 0.3s ease;
-      box-shadow: var(--dell-shadow-md);
+      height: 50px;
     }
 
     .fullscreen .dell-fullscreen-overlay {
@@ -462,6 +464,77 @@
       border-left: 4px solid var(--dell-orange);
     }
 
+    /* Apps Dropdown */
+    .dell-apps-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border-radius: var(--dell-radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: var(--dell-shadow-lg);
+      z-index: 3000;
+      min-width: 150px;
+      opacity: 0;
+      transform: translateY(-10px);
+      pointer-events: none;
+      transition: all 0.2s ease;
+    }
+
+    .dell-apps-dropdown.show {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .dell-app-item {
+      padding: var(--dell-spacing-sm) var(--dell-spacing-md);
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      font-size: var(--dell-font-size-sm);
+    }
+
+    .dell-app-item:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .dell-app-item:first-child {
+      border-radius: var(--dell-radius-md) var(--dell-radius-md) 0 0;
+    }
+
+    .dell-app-item:last-child {
+      border-radius: 0 0 var(--dell-radius-md) var(--dell-radius-md);
+    }
+
+    /* Recording Button States */
+    .dell-btn.recording {
+      background-color: rgba(220, 56, 45, 0.2);
+      border-color: rgba(220, 56, 45, 0.5);
+      animation: pulse-red 2s infinite;
+    }
+
+    @keyframes pulse-red {
+      0%, 100% { 
+        background-color: rgba(220, 56, 45, 0.2);
+      }
+      50% { 
+        background-color: rgba(220, 56, 45, 0.4);
+      }
+    }
+
+    /* Recording Icon States */
+    .recording-icon-stop {
+      transform: scale(0.8);
+    }
+
+    .recording-icon-stop rect {
+      rx: 2;
+      ry: 2;
+    }
+
     /* Focus States for Accessibility */
     .dell-btn:focus {
       outline: 2px solid white;
@@ -485,6 +558,36 @@
             <path d="M5.828 10.172a.5.5 0 0 0-.707 0l-4.096 4.096V11.5a.5.5 0 0 0-1 0v3.975a.5.5 0 0 0 .5.5H4.5a.5.5 0 0 0 0-1H1.732l4.096-4.096a.5.5 0 0 0 0-.707zm4.344 0a.5.5 0 0 1 .707 0l4.096 4.096V11.5a.5.5 0 1 1 1 0v3.975a.5.5 0 0 1-.5.5H11.5a.5.5 0 0 1 0-1h2.768l-4.096-4.096a.5.5 0 0 1 0-.707zm0-4.344a.5.5 0 0 0 .707 0l4.096-4.096V4.5a.5.5 0 1 0 1 0V.525a.5.5 0 0 0-.5-.5H11.5a.5.5 0 0 0 0 1h2.768l-4.096 4.096a.5.5 0 0 0 0 .707zm-4.344 0a.5.5 0 0 1-.707 0L1.025 1.732V4.5a.5.5 0 0 1-1 0V.525a.5.5 0 0 1 .5-.5H4.5a.5.5 0 0 1 0 1H1.732l4.096 4.096a.5.5 0 0 1 0 .707z"/>
           </svg>
         </button>
+      </div>
+      
+      <!-- Capture Controls -->
+      <div class="dell-tool-group">
+        <button class="dell-btn" id="screenshotBtn" title="Take Screenshot" aria-label="Take Screenshot">
+          <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4-8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM3 14h10V2H3v12z"/>
+          </svg>
+        </button>
+        <button class="dell-btn" id="recordBtn" title="Start Recording" aria-label="Toggle Recording">
+          <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16" id="recordIcon">
+            <circle cx="8" cy="8" r="3"/>
+          </svg>
+        </button>
+      </div>
+      
+      <!-- App Launcher -->
+      <div class="dell-tool-group" style="position: relative;">
+        <button class="dell-btn" id="appsBtn" title="Launch Applications" aria-label="Launch Applications">
+          <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M0 2a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm9 0a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2V2zM0 11a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-3zm9 0a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2v-3z"/>
+          </svg>
+          Apps
+        </button>
+        <div class="dell-apps-dropdown" id="appsDropdown">
+          <div class="dell-app-item" data-app="powershell">PowerShell</div>
+          <div class="dell-app-item" data-app="cmd">Command Prompt</div>
+          <div class="dell-app-item" data-app="notepad">Notepad</div>
+          <div class="dell-app-item" data-app="eventvwr">Event Viewer</div>
+        </div>
       </div>
       
       <!-- Status Indicator -->
