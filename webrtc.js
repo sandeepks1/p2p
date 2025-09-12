@@ -576,29 +576,47 @@ function handleKeyboardEvent(event) {
 }
 
 function sendMouseData(data) {
+  console.log('📭 CLIENT: Sending mouse data:', data);
+  
   if (!dataChannel || dataChannel.readyState !== 'open') {
+    console.error('❌ CLIENT: DataChannel not ready for mouse data:', {
+      exists: !!dataChannel,
+      readyState: dataChannel ? dataChannel.readyState : 'null'
+    });
     return;
   }
   
   try {
     // Use msgpack for efficient binary encoding
     const encodedData = msgpack.encode(data);
+    console.log('📦 CLIENT: Mouse data encoded to binary:', encodedData.length, 'bytes');
     dataChannel.send(encodedData);
+    console.log('✅ CLIENT: Mouse data sent successfully');
   } catch (error) {
+    console.error('❌ CLIENT: Error sending mouse data:', error);
     log('Error sending mouse data:', error);
   }
 }
 
 function sendKeyboardData(data) {
+  console.log('⌨️ CLIENT: Sending keyboard data:', data);
+  
   if (!dataChannel || dataChannel.readyState !== 'open') {
+    console.error('❌ CLIENT: DataChannel not ready for keyboard data:', {
+      exists: !!dataChannel,
+      readyState: dataChannel ? dataChannel.readyState : 'null'
+    });
     return;
   }
   
   try {
     // Use msgpack for efficient binary encoding
     const encodedData = msgpack.encode(data);
+    console.log('📦 CLIENT: Keyboard data encoded to binary:', encodedData.length, 'bytes');
     dataChannel.send(encodedData);
+    console.log('✅ CLIENT: Keyboard data sent successfully');
   } catch (error) {
+    console.error('❌ CLIENT: Error sending keyboard data:', error);
     log('Error sending keyboard data:', error);
   }
 }
