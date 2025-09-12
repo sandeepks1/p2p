@@ -570,7 +570,7 @@
       height: 16px;
     }
 
-    /* Tooltip Panel */
+    /* Tooltip Panel - Horizontal Bar */
     .dell-tooltip-panel {
       position: fixed;
       top: 60px;
@@ -583,13 +583,12 @@
       border: 1px solid rgba(255, 255, 255, 0.2);
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
       z-index: 1999;
-      min-width: 300px;
-      max-width: 400px;
       opacity: 0;
       visibility: hidden;
       transform: translateX(-50%) translateY(-20px) scale(0.95);
       transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
       pointer-events: none;
+      white-space: nowrap;
     }
 
     .dell-tooltip-panel.show {
@@ -602,28 +601,30 @@
     .dell-tooltip-content {
       padding: var(--dell-spacing-md);
       color: white;
+      display: flex;
+      align-items: center;
+      gap: var(--dell-spacing-lg);
     }
 
     .dell-tooltip-group {
-      margin-bottom: var(--dell-spacing-md);
-    }
-
-    .dell-tooltip-group:last-child {
-      margin-bottom: 0;
+      display: flex;
+      align-items: center;
+      gap: var(--dell-spacing-sm);
     }
 
     .dell-tooltip-label {
       font-size: var(--dell-font-size-xs);
       color: rgba(255, 255, 255, 0.7);
-      margin-bottom: var(--dell-spacing-sm);
       font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      margin-right: var(--dell-spacing-xs);
+      white-space: nowrap;
     }
 
     .dell-tooltip-buttons {
       display: flex;
-      gap: var(--dell-spacing-sm);
+      gap: 4px;
       align-items: center;
       position: relative;
     }
@@ -632,15 +633,15 @@
       background: rgba(255, 255, 255, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.2);
       color: white;
-      padding: var(--dell-spacing-sm);
+      padding: var(--dell-spacing-xs);
       border-radius: var(--dell-radius-sm);
       cursor: pointer;
       transition: all 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-width: 36px;
-      min-height: 36px;
+      min-width: 32px;
+      min-height: 32px;
       position: relative;
     }
 
@@ -669,10 +670,11 @@
     .dell-disconnect-btn {
       background: rgba(220, 56, 45, 0.2) !important;
       border-color: rgba(220, 56, 45, 0.5) !important;
-      font-size: var(--dell-font-size-sm);
-      padding: var(--dell-spacing-sm) var(--dell-spacing-md);
-      gap: var(--dell-spacing-xs);
+      font-size: var(--dell-font-size-xs);
+      padding: var(--dell-spacing-xs) var(--dell-spacing-sm);
+      gap: 4px;
       min-width: auto;
+      height: 32px;
     }
 
     .dell-disconnect-btn:hover {
@@ -683,12 +685,14 @@
     .dell-tooltip-status {
       display: flex;
       align-items: center;
-      gap: var(--dell-spacing-sm);
+      gap: var(--dell-spacing-xs);
       background: rgba(255, 255, 255, 0.05);
-      padding: var(--dell-spacing-sm) var(--dell-spacing-md);
+      padding: var(--dell-spacing-xs) var(--dell-spacing-sm);
       border-radius: var(--dell-radius-sm);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      font-size: var(--dell-font-size-sm);
+      font-size: var(--dell-font-size-xs);
+      height: 32px;
+      white-space: nowrap;
     }
 
     /* Fullscreen state - hide tooltip trigger */
@@ -729,7 +733,7 @@
     </svg>
   </div>
 
-  <!-- Tooltip Panel -->
+  <!-- Tooltip Panel - Horizontal Bar -->
   <div class="dell-tooltip-panel" id="tooltipPanel">
     <div class="dell-tooltip-content">
       <!-- View Controls -->
@@ -749,6 +753,9 @@
         </div>
       </div>
       
+      <!-- Vertical Divider -->
+      <div style="width: 1px; height: 32px; background: rgba(255, 255, 255, 0.2);"></div>
+      
       <!-- Capture Controls -->
       <div class="dell-tooltip-group">
         <div class="dell-tooltip-label">Capture</div>
@@ -765,6 +772,9 @@
           </button>
         </div>
       </div>
+      
+      <!-- Vertical Divider -->
+      <div style="width: 1px; height: 32px; background: rgba(255, 255, 255, 0.2);"></div>
       
       <!-- App Launcher -->
       <div class="dell-tooltip-group">
@@ -784,6 +794,9 @@
         </div>
       </div>
       
+      <!-- Vertical Divider -->
+      <div style="width: 1px; height: 32px; background: rgba(255, 255, 255, 0.2);"></div>
+      
       <!-- Status -->
       <div class="dell-tooltip-group">
         <div class="dell-tooltip-label">Status</div>
@@ -793,16 +806,17 @@
         </div>
       </div>
       
+      <!-- Vertical Divider -->
+      <div style="width: 1px; height: 32px; background: rgba(255, 255, 255, 0.2);"></div>
+      
       <!-- Disconnect -->
       <div class="dell-tooltip-group">
-        <div class="dell-tooltip-buttons">
-          <button class="dell-tooltip-btn dell-disconnect-btn" id="disconnectBtn" title="Disconnect">
-            <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
-            </svg>
-            Disconnect
-          </button>
-        </div>
+        <button class="dell-tooltip-btn dell-disconnect-btn" id="disconnectBtn" title="Disconnect">
+          <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
+          </svg>
+          Disconnect
+        </button>
       </div>
     </div>
   </div>
