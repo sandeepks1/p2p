@@ -535,76 +535,277 @@
       ry: 2;
     }
 
+    /* Tooltip Trigger Button */
+    .dell-tooltip-trigger {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 32px;
+      height: 32px;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      transition: all 0.3s ease;
+      opacity: 0.6;
+    }
+
+    .dell-tooltip-trigger:hover {
+      opacity: 1;
+      background: rgba(0, 0, 0, 0.9);
+      transform: translateX(-50%) scale(1.1);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .dell-tooltip-icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Tooltip Panel */
+    .dell-tooltip-panel {
+      position: fixed;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: var(--dell-radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+      z-index: 1999;
+      min-width: 300px;
+      max-width: 400px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(-50%) translateY(-20px) scale(0.95);
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      pointer-events: none;
+    }
+
+    .dell-tooltip-panel.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .dell-tooltip-content {
+      padding: var(--dell-spacing-md);
+      color: white;
+    }
+
+    .dell-tooltip-group {
+      margin-bottom: var(--dell-spacing-md);
+    }
+
+    .dell-tooltip-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .dell-tooltip-label {
+      font-size: var(--dell-font-size-xs);
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: var(--dell-spacing-sm);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .dell-tooltip-buttons {
+      display: flex;
+      gap: var(--dell-spacing-sm);
+      align-items: center;
+      position: relative;
+    }
+
+    .dell-tooltip-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: var(--dell-spacing-sm);
+      border-radius: var(--dell-radius-sm);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 36px;
+      min-height: 36px;
+      position: relative;
+    }
+
+    .dell-tooltip-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .dell-tooltip-btn:active {
+      transform: translateY(0);
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .dell-tooltip-btn.active {
+      background: rgba(0, 125, 184, 0.8);
+      border-color: var(--dell-blue-primary);
+    }
+
+    .dell-tooltip-btn.recording {
+      background: rgba(220, 56, 45, 0.3);
+      border-color: rgba(220, 56, 45, 0.6);
+      animation: pulse-red 2s infinite;
+    }
+
+    .dell-disconnect-btn {
+      background: rgba(220, 56, 45, 0.2) !important;
+      border-color: rgba(220, 56, 45, 0.5) !important;
+      font-size: var(--dell-font-size-sm);
+      padding: var(--dell-spacing-sm) var(--dell-spacing-md);
+      gap: var(--dell-spacing-xs);
+      min-width: auto;
+    }
+
+    .dell-disconnect-btn:hover {
+      background: rgba(220, 56, 45, 0.4) !important;
+      border-color: rgba(220, 56, 45, 0.7) !important;
+    }
+
+    .dell-tooltip-status {
+      display: flex;
+      align-items: center;
+      gap: var(--dell-spacing-sm);
+      background: rgba(255, 255, 255, 0.05);
+      padding: var(--dell-spacing-sm) var(--dell-spacing-md);
+      border-radius: var(--dell-radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: var(--dell-font-size-sm);
+    }
+
+    /* Fullscreen state - hide tooltip trigger */
+    .fullscreen .dell-tooltip-trigger {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .fullscreen .dell-tooltip-panel {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
     /* Focus States for Accessibility */
     .dell-btn:focus {
       outline: 2px solid white;
       outline-offset: 2px;
     }
+
+    .dell-tooltip-btn:focus {
+      outline: 2px solid rgba(0, 125, 184, 0.8);
+      outline-offset: 2px;
+    }
+
+    .dell-tooltip-trigger:focus {
+      outline: 2px solid rgba(0, 125, 184, 0.8);
+      outline-offset: 2px;
+    }
   </style>
 </head>
 <body>
-  <!-- Dell Header - Minimal Transparent -->
-  <header class="dell-header">
-    <div class="dell-toolbar">
-      <!-- Essential View Controls -->
-      <div class="dell-tool-group">
-        <button class="dell-btn" id="fitScreenBtn" title="Fit to Screen" aria-label="Fit to Screen">
-          <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M1.5 1.5A.5.5 0 0 1 2 1h3a.5.5 0 0 1 0 1H2v3a.5.5 0 0 1-1 0V2a.5.5 0 0 1 .5-.5zm11 0A.5.5 0 0 1 13 1h1.5a.5.5 0 0 1 .5.5V5a.5.5 0 0 1-1 0V2h-2.5a.5.5 0 0 1 0-1zM1.5 14.5A.5.5 0 0 1 1 14v-3.5a.5.5 0 0 1 1 0V14h3a.5.5 0 0 1 0 1H2a.5.5 0 0 1-.5-.5zm13 0a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1 0-1H14v-3a.5.5 0 0 1 1 0v3.5z"/>
-          </svg>
-        </button>
-        <button class="dell-btn" id="fullscreenBtn" title="Fullscreen (F11)" aria-label="Toggle Fullscreen">
-          <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M5.828 10.172a.5.5 0 0 0-.707 0l-4.096 4.096V11.5a.5.5 0 0 0-1 0v3.975a.5.5 0 0 0 .5.5H4.5a.5.5 0 0 0 0-1H1.732l4.096-4.096a.5.5 0 0 0 0-.707zm4.344 0a.5.5 0 0 1 .707 0l4.096 4.096V11.5a.5.5 0 1 1 1 0v3.975a.5.5 0 0 1-.5.5H11.5a.5.5 0 0 1 0-1h2.768l-4.096-4.096a.5.5 0 0 1 0-.707zm0-4.344a.5.5 0 0 0 .707 0l4.096-4.096V4.5a.5.5 0 1 0 1 0V.525a.5.5 0 0 0-.5-.5H11.5a.5.5 0 0 0 0 1h2.768l-4.096 4.096a.5.5 0 0 0 0 .707zm-4.344 0a.5.5 0 0 1-.707 0L1.025 1.732V4.5a.5.5 0 0 1-1 0V.525a.5.5 0 0 1 .5-.5H4.5a.5.5 0 0 1 0 1H1.732l4.096 4.096a.5.5 0 0 1 0 .707z"/>
-          </svg>
-        </button>
-      </div>
-      
-      <!-- Capture Controls -->
-      <div class="dell-tool-group">
-        <button class="dell-btn" id="screenshotBtn" title="Take Screenshot" aria-label="Take Screenshot">
-          <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4-8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM3 14h10V2H3v12z"/>
-          </svg>
-        </button>
-        <button class="dell-btn" id="recordBtn" title="Start Recording" aria-label="Toggle Recording">
-          <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16" id="recordIcon">
-            <circle cx="8" cy="8" r="3"/>
-          </svg>
-        </button>
-      </div>
-      
-      <!-- App Launcher -->
-      <div class="dell-tool-group" style="position: relative;">
-        <button class="dell-btn" id="appsBtn" title="Launch Applications" aria-label="Launch Applications">
-          <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M0 2a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm9 0a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2V2zM0 11a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-3zm9 0a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2v-3z"/>
-          </svg>
-          Apps
-        </button>
-        <div class="dell-apps-dropdown" id="appsDropdown">
-          <div class="dell-app-item" data-app="powershell">PowerShell</div>
-          <div class="dell-app-item" data-app="cmd">Command Prompt</div>
-          <div class="dell-app-item" data-app="notepad">Notepad</div>
-          <div class="dell-app-item" data-app="eventvwr">Event Viewer</div>
+  <!-- Tooltip Button - Centered at top -->
+  <div class="dell-tooltip-trigger" id="tooltipTrigger">
+    <svg class="dell-tooltip-icon" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+      <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
+    </svg>
+  </div>
+
+  <!-- Tooltip Panel -->
+  <div class="dell-tooltip-panel" id="tooltipPanel">
+    <div class="dell-tooltip-content">
+      <!-- View Controls -->
+      <div class="dell-tooltip-group">
+        <div class="dell-tooltip-label">View</div>
+        <div class="dell-tooltip-buttons">
+          <button class="dell-tooltip-btn" id="fitScreenBtn" title="Fit to Screen">
+            <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M1.5 1.5A.5.5 0 0 1 2 1h3a.5.5 0 0 1 0 1H2v3a.5.5 0 0 1-1 0V2a.5.5 0 0 1 .5-.5zm11 0A.5.5 0 0 1 13 1h1.5a.5.5 0 0 1 .5.5V5a.5.5 0 0 1-1 0V2h-2.5a.5.5 0 0 1 0-1zM1.5 14.5A.5.5 0 0 1 1 14v-3.5a.5.5 0 0 1 1 0V14h3a.5.5 0 0 1 0 1H2a.5.5 0 0 1-.5-.5zm13 0a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1 0-1H14v-3a.5.5 0 0 1 1 0v3.5z"/>
+            </svg>
+          </button>
+          <button class="dell-tooltip-btn" id="fullscreenBtn" title="Fullscreen (F11)">
+            <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M5.828 10.172a.5.5 0 0 0-.707 0l-4.096 4.096V11.5a.5.5 0 0 0-1 0v3.975a.5.5 0 0 0 .5.5H4.5a.5.5 0 0 0 0-1H1.732l4.096-4.096a.5.5 0 0 0 0-.707zm4.344 0a.5.5 0 0 1 .707 0l4.096 4.096V11.5a.5.5 0 1 1 1 0v3.975a.5.5 0 0 1-.5.5H11.5a.5.5 0 0 1 0-1h2.768l-4.096-4.096a.5.5 0 0 1 0-.707zm0-4.344a.5.5 0 0 0 .707 0l4.096-4.096V4.5a.5.5 0 1 0 1 0V.525a.5.5 0 0 0-.5-.5H11.5a.5.5 0 0 0 0 1h2.768l-4.096 4.096a.5.5 0 0 0 0 .707zm-4.344 0a.5.5 0 0 1-.707 0L1.025 1.732V4.5a.5.5 0 0 1-1 0V.525a.5.5 0 0 1 .5-.5H4.5a.5.5 0 0 1 0 1H1.732l4.096 4.096a.5.5 0 0 1 0 .707z"/>
+            </svg>
+          </button>
         </div>
       </div>
       
-      <!-- Status Indicator -->
-      <div class="dell-status-indicator">
-        <div class="dell-status-dot" id="statusDot"></div>
-        <span id="statusText">Connecting...</span>
+      <!-- Capture Controls -->
+      <div class="dell-tooltip-group">
+        <div class="dell-tooltip-label">Capture</div>
+        <div class="dell-tooltip-buttons">
+          <button class="dell-tooltip-btn" id="screenshotBtn" title="Take Screenshot">
+            <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4-8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM3 14h10V2H3v12z"/>
+            </svg>
+          </button>
+          <button class="dell-tooltip-btn" id="recordBtn" title="Start Recording">
+            <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16" id="recordIcon">
+              <circle cx="8" cy="8" r="3"/>
+            </svg>
+          </button>
+        </div>
       </div>
       
-      <!-- Disconnect Button -->
-      <button class="dell-btn" id="disconnectBtn" title="Disconnect" aria-label="Disconnect" style="background-color: rgba(220, 56, 45, 0.2); border-color: rgba(220, 56, 45, 0.5);">
-        <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
-          <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
-        </svg>
-        Disconnect
-      </button>
+      <!-- App Launcher -->
+      <div class="dell-tooltip-group">
+        <div class="dell-tooltip-label">Apps</div>
+        <div class="dell-tooltip-buttons">
+          <button class="dell-tooltip-btn" id="appsBtn" title="Launch Applications">
+            <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M0 2a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm9 0a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2V2zM0 11a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-3zm9 0a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2v-3z"/>
+            </svg>
+          </button>
+          <div class="dell-apps-dropdown" id="appsDropdown">
+            <div class="dell-app-item" data-app="powershell">PowerShell</div>
+            <div class="dell-app-item" data-app="cmd">Command Prompt</div>
+            <div class="dell-app-item" data-app="notepad">Notepad</div>
+            <div class="dell-app-item" data-app="eventvwr">Event Viewer</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Status -->
+      <div class="dell-tooltip-group">
+        <div class="dell-tooltip-label">Status</div>
+        <div class="dell-tooltip-status">
+          <div class="dell-status-dot" id="statusDot"></div>
+          <span id="statusText">Connecting...</span>
+        </div>
+      </div>
+      
+      <!-- Disconnect -->
+      <div class="dell-tooltip-group">
+        <div class="dell-tooltip-buttons">
+          <button class="dell-tooltip-btn dell-disconnect-btn" id="disconnectBtn" title="Disconnect">
+            <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
+            </svg>
+            Disconnect
+          </button>
+        </div>
+      </div>
     </div>
-  </header>
+  </div>
 
   <!-- Fullscreen Overlay Header -->
   <div class="dell-fullscreen-overlay" id="fullscreenOverlay">
