@@ -348,8 +348,22 @@ function setupAppLauncher() {
 }
 
 function launchRemoteApp(appName) {
-  if (!dataChannel || dataChannel.readyState !== 'open') {
-    showToast('Data channel not available for remote commands', 'error');
+  log('Attempting to launch app:', appName);
+  log('DataChannel status:', {
+    exists: !!dataChannel,
+    readyState: dataChannel ? dataChannel.readyState : 'null',
+    label: dataChannel ? dataChannel.label : 'null'
+  });
+  
+  if (!dataChannel) {
+    showToast('Data channel not established yet', 'error');
+    log('Error: dataChannel is null');
+    return;
+  }
+  
+  if (dataChannel.readyState !== 'open') {
+    showToast(`Data channel not ready (${dataChannel.readyState})`, 'error');
+    log('Error: dataChannel readyState is', dataChannel.readyState);
     return;
   }
   
@@ -401,42 +415,8 @@ function launchRemoteApp(appName) {
 function setupDataChannel() {
   if (!pc) return;
   
-  try {
-    dataChannel = pc.createDataChannel('commands', {
-      ordered: true
-    });
-    
-    dataChannel.onopen = () => {
-      log('Data channel opened - remote commands available');
-      if (appsBtn) {
-        appsBtn.disabled = false;
-      }
-    };
-    
-    dataChannel.onclose = () => {
-      log('Data channel closed');
-      if (appsBtn) {
-        appsBtn.disabled = true;
-      }
-    };
-    
-    dataChannel.onerror = (error) => {
-      log('Data channel error:', error);
-    };
-    
-    dataChannel.onmessage = (event) => {
-      log('Data channel message received:', event.data);
-      try {
-        const message = JSON.parse(event.data);
-        handleDataChannelMessage(message);
-      } catch (e) {
-        log('Non-JSON data channel message:', event.data);
-      }
-    };
-    
-  } catch (error) {
-    log('Error setting up data channel:', error);
-  }
+  // Don't create a data channel on client side - wait for server to create one
+  log('Setting up data channel handlers (waiting for server-created channel)');
 }
 
 function handleDataChannelMessage(message) {
@@ -712,22 +692,62 @@ async function handleOffer(msg) {
     log("Connection state:", pc.connectionState);
   };
 
-  // Handle incoming DataChannel
+  // Handle incoming DataChannel from server
   pc.ondatachannel = event => {
     const channel = event.channel;
-    log("DataChannel received:", channel.label);
-
-    channel.onopen = () => {
-      log("DataChannel opened:", channel.label);
-    };
-    channel.onmessage = e => {
-      log("DataChannel message:", e.data);
-      updateCounter(`Data: ${e.data}`);
-    };
-    channel.onclose = () => {
-      log("DataChannel closed");
-      updateCounter("Data channel closed");
-    };
+    log("DataChannel received from server:", channel.label);
+    
+    // Store the data channel reference for sending messages
+    if (channel.label === 'screen-share') {
+      dataChannel = channel;
+      
+      channel.onopen = () => {
+        log('🟢 Server data channel opened - remote commands available');
+        log('DataChannel details:', {
+          label: channel.label,
+          readyState: channel.readyState,
+          protocol: channel.protocol
+        });
+        if (appsBtn) {
+          appsBtn.disabled = false;
+        }
+        showToast('Remote app launcher ready', 'success');
+      };
+      
+      channel.onclose = () => {
+        log('Server data channel closed');
+        if (appsBtn) {
+          appsBtn.disabled = true;
+        }
+        dataChannel = null;
+      };
+      
+      channel.onerror = (error) => {
+        log('Server data channel error:', error);
+      };
+      
+      channel.onmessage = e => {
+        log("DataChannel message received:", e.data);
+        try {
+          const message = JSON.parse(e.data);
+          handleDataChannelMessage(message);
+        } catch (ex) {
+          log('Non-JSON data channel message:', e.data);
+        }
+      };
+    } else {
+      // Handle other data channels if needed
+      channel.onopen = () => {
+        log("Other DataChannel opened:", channel.label);
+      };
+      channel.onmessage = e => {
+        log("Other DataChannel message:", e.data);
+        updateCounter(`Data: ${e.data}`);
+      };
+      channel.onclose = () => {
+        log("Other DataChannel closed:", channel.label);
+      };
+    }
   };
 
   try {
