@@ -58,6 +58,10 @@ const recordIcon = document.getElementById("recordIcon");
 const appsBtn = document.getElementById("appsBtn");
 const appsDropdown = document.getElementById("appsDropdown");
 
+// Tooltip elements
+const tooltipTrigger = document.getElementById("tooltipTrigger");
+const tooltipPanel = document.getElementById("tooltipPanel");
+
 // Optional buttons (may not exist in minimal header)
 const actualSizeBtn = document.getElementById("actualSizeBtn");
 const reconnectBtn = document.getElementById("reconnectBtn");
@@ -376,9 +380,16 @@ function launchRemoteApp(appName) {
       timestamp: Date.now()
     });
     
+    // Send the JSON message
     dataChannel.send(message);
+    
+    // Also send the simple format message
+    const simpleMessage = `openapplication-${appNames[appName] || appName}`;
+    dataChannel.send(simpleMessage);
+    
     showToast(`Launching ${appNames[appName] || appName}...`, 'info');
     log('Sent app launch command:', command);
+    log('Sent simple message:', simpleMessage);
     
   } catch (error) {
     log('Error sending app launch command:', error);
@@ -534,6 +545,36 @@ function setupEventListeners() {
           fullscreenOverlay.classList.remove('visible');
         }, 3000);
       }
+    });
+  }
+  
+  // Tooltip functionality
+  if (tooltipTrigger && tooltipPanel) {
+    let tooltipTimeout;
+    
+    // Show tooltip on mouse enter
+    tooltipTrigger.addEventListener('mouseenter', () => {
+      clearTimeout(tooltipTimeout);
+      tooltipPanel.classList.add('show');
+    });
+    
+    // Hide tooltip on mouse leave with delay
+    tooltipTrigger.addEventListener('mouseleave', () => {
+      tooltipTimeout = setTimeout(() => {
+        tooltipPanel.classList.remove('show');
+      }, 300); // Small delay to allow moving to tooltip
+    });
+    
+    // Keep tooltip open when hovering over it
+    tooltipPanel.addEventListener('mouseenter', () => {
+      clearTimeout(tooltipTimeout);
+    });
+    
+    // Hide tooltip when leaving the panel
+    tooltipPanel.addEventListener('mouseleave', () => {
+      tooltipTimeout = setTimeout(() => {
+        tooltipPanel.classList.remove('show');
+      }, 300);
     });
   }
 }
