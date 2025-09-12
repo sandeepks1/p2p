@@ -45,16 +45,18 @@ const counterDisplay = document.getElementById("counterDisplay");
 const qualityInfo = document.getElementById("qualityInfo");
 const fullscreenOverlay = document.getElementById("fullscreenOverlay");
 
-// Toolbar buttons
+// Toolbar buttons (only the ones that exist in the minimal header)
 const fitScreenBtn = document.getElementById("fitScreenBtn");
 const fullscreenBtn = document.getElementById("fullscreenBtn");
+const exitFullscreenBtn = document.getElementById("exitFullscreenBtn");
+const disconnectBtn = document.getElementById("disconnectBtn");
+
+// Optional buttons (may not exist in minimal header)
 const actualSizeBtn = document.getElementById("actualSizeBtn");
 const reconnectBtn = document.getElementById("reconnectBtn");
 const screenshotBtn = document.getElementById("screenshotBtn");
 const settingsBtn = document.getElementById("settingsBtn");
 const aboutBtn = document.getElementById("aboutBtn");
-const exitFullscreenBtn = document.getElementById("exitFullscreenBtn");
-const disconnectBtn = document.getElementById("disconnectBtn");
 
 let socket, pc;
 let isFullscreen = false;
@@ -80,12 +82,18 @@ function showToast(message, type = 'info') {
 }
 
 function updateStatus(text, connected = false) { 
-  statusText.textContent = text;
-  statusDot.className = connected ? 'dell-status-dot connected' : 'dell-status-dot';
+  if (statusText) {
+    statusText.textContent = text;
+  }
+  if (statusDot) {
+    statusDot.className = connected ? 'dell-status-dot connected' : 'dell-status-dot';
+  }
   
   if (connected && loadingScreen) {
     loadingScreen.classList.add('hidden');
-    screenshotBtn.disabled = false;
+    if (screenshotBtn) {
+      screenshotBtn.disabled = false;
+    }
     showToast('Connection established successfully', 'success');
   }
 }
@@ -111,22 +119,30 @@ function toggleFullscreen() {
 function enterFullscreen() {
   document.body.classList.add('fullscreen');
   isFullscreen = true;
-  fullscreenBtn.classList.add('active');
+  if (fullscreenBtn) {
+    fullscreenBtn.classList.add('active');
+  }
   
   // Show fullscreen overlay briefly
-  setTimeout(() => {
-    fullscreenOverlay.classList.add('visible');
+  if (fullscreenOverlay) {
     setTimeout(() => {
-      if (isFullscreen) fullscreenOverlay.classList.remove('visible');
-    }, 3000);
-  }, 100);
+      fullscreenOverlay.classList.add('visible');
+      setTimeout(() => {
+        if (isFullscreen) fullscreenOverlay.classList.remove('visible');
+      }, 3000);
+    }, 100);
+  }
 }
 
 function exitFullscreen() {
   document.body.classList.remove('fullscreen');
-  fullscreenOverlay.classList.remove('visible');
+  if (fullscreenOverlay) {
+    fullscreenOverlay.classList.remove('visible');
+  }
   isFullscreen = false;
-  fullscreenBtn.classList.remove('active');
+  if (fullscreenBtn) {
+    fullscreenBtn.classList.remove('active');
+  }
 }
 
 // Video scaling functions
@@ -134,16 +150,24 @@ function fitToScreen() {
   videoEl.style.width = '100%';
   videoEl.style.height = '100%';
   videoEl.style.objectFit = 'contain';
-  fitScreenBtn.classList.add('active');
-  actualSizeBtn.classList.remove('active');
+  if (fitScreenBtn) {
+    fitScreenBtn.classList.add('active');
+  }
+  if (actualSizeBtn) {
+    actualSizeBtn.classList.remove('active');
+  }
 }
 
 function actualSize() {
   videoEl.style.width = 'auto';
   videoEl.style.height = 'auto';
   videoEl.style.objectFit = 'none';
-  actualSizeBtn.classList.add('active');
-  fitScreenBtn.classList.remove('active');
+  if (actualSizeBtn) {
+    actualSizeBtn.classList.add('active');
+  }
+  if (fitScreenBtn) {
+    fitScreenBtn.classList.remove('active');
+  }
 }
 
 // Screenshot functionality
@@ -167,29 +191,52 @@ function takeScreenshot() {
 
 // Event listeners setup function
 function setupEventListeners() {
-  fitScreenBtn.addEventListener('click', fitToScreen);
-  fullscreenBtn.addEventListener('click', toggleFullscreen);
-  actualSizeBtn.addEventListener('click', actualSize);
-  exitFullscreenBtn.addEventListener('click', exitFullscreen);
-  screenshotBtn.addEventListener('click', takeScreenshot);
+  // Only bind event listeners for buttons that exist
+  if (fitScreenBtn) {
+    fitScreenBtn.addEventListener('click', fitToScreen);
+  }
   
-  reconnectBtn.addEventListener('click', () => {
-    showToast('Reconnecting...', 'warning');
-    teardown();
-    connectSignaling();
-  });
+  if (fullscreenBtn) {
+    fullscreenBtn.addEventListener('click', toggleFullscreen);
+  }
   
-  disconnectBtn.addEventListener('click', () => {
-    disconnect();
-  });
+  if (actualSizeBtn) {
+    actualSizeBtn.addEventListener('click', actualSize);
+  }
+  
+  if (exitFullscreenBtn) {
+    exitFullscreenBtn.addEventListener('click', exitFullscreen);
+  }
+  
+  if (screenshotBtn) {
+    screenshotBtn.addEventListener('click', takeScreenshot);
+  }
+  
+  if (reconnectBtn) {
+    reconnectBtn.addEventListener('click', () => {
+      showToast('Reconnecting...', 'warning');
+      teardown();
+      connectSignaling();
+    });
+  }
+  
+  if (disconnectBtn) {
+    disconnectBtn.addEventListener('click', () => {
+      disconnect();
+    });
+  }
 
-  settingsBtn.addEventListener('click', () => {
-    showToast('Settings panel coming soon!', 'info');
-  });
+  if (settingsBtn) {
+    settingsBtn.addEventListener('click', () => {
+      showToast('Settings panel coming soon!', 'info');
+    });
+  }
 
-  aboutBtn.addEventListener('click', () => {
-    showToast('Dell Remote Desktop v1.0 - Powered by WebRTC', 'info');
-  });
+  if (aboutBtn) {
+    aboutBtn.addEventListener('click', () => {
+      showToast('Dell Remote Desktop v1.0 - Powered by WebRTC', 'info');
+    });
+  }
 
   // Keyboard shortcuts
   document.addEventListener('keydown', (e) => {
@@ -219,20 +266,24 @@ function setupEventListeners() {
   });
 
   // Mouse events for fullscreen overlay
-  videoContainer.addEventListener('mousemove', () => {
-    if (isFullscreen) {
-      fullscreenOverlay.classList.add('visible');
-      clearTimeout(fullscreenOverlay.hideTimeout);
-      fullscreenOverlay.hideTimeout = setTimeout(() => {
-        fullscreenOverlay.classList.remove('visible');
-      }, 3000);
-    }
-  });
+  if (videoContainer) {
+    videoContainer.addEventListener('mousemove', () => {
+      if (isFullscreen && fullscreenOverlay) {
+        fullscreenOverlay.classList.add('visible');
+        clearTimeout(fullscreenOverlay.hideTimeout);
+        fullscreenOverlay.hideTimeout = setTimeout(() => {
+          fullscreenOverlay.classList.remove('visible');
+        }, 3000);
+      }
+    });
+  }
 }
 
 function connectSignaling() {
   updateStatus("Connecting to signaling server...");
-  loadingScreen.classList.remove('hidden');
+  if (loadingScreen) {
+    loadingScreen.classList.remove('hidden');
+  }
   
   socket = new WebSocket(SIGNALING_SERVER_URL);
   socket.binaryType = "arraybuffer";
@@ -423,8 +474,12 @@ function teardown() {
   videoEl.srcObject = null;
   updateCounter("Disconnected");
   updateQuality("Not connected");
-  screenshotBtn.disabled = true;
-  loadingScreen.classList.remove('hidden');
+  if (screenshotBtn) {
+    screenshotBtn.disabled = true;
+  }
+  if (loadingScreen) {
+    loadingScreen.classList.remove('hidden');
+  }
 }
 
 // Enhanced error handling and connection monitoring
