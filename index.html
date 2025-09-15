@@ -814,6 +814,32 @@
     .fullscreen .dell-video-container:hover .dell-coordinates-display {
       opacity: 0.9;
     }
+
+    /* Cursor Display Fixes */
+    .dell-video-container {
+      cursor: auto !important; /* Always show local browser cursor */
+    }
+
+    #remoteVideo {
+      cursor: crosshair; /* Show crosshair cursor over video for remote desktop */
+    }
+
+    /* Cursor style variations that can be toggled */
+    .cursor-pointer #remoteVideo {
+      cursor: pointer;
+    }
+
+    .cursor-grab #remoteVideo {
+      cursor: grab;
+    }
+
+    .cursor-grab #remoteVideo:active {
+      cursor: grabbing;
+    }
+
+    .cursor-default #remoteVideo {
+      cursor: default;
+    }
   </style>
 </head>
 <body>
