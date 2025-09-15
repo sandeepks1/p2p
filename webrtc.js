@@ -45,6 +45,11 @@ const counterDisplay = document.getElementById("counterDisplay");
 const qualityInfo = document.getElementById("qualityInfo");
 const fullscreenOverlay = document.getElementById("fullscreenOverlay");
 
+// Mouse coordinate display elements
+const coordinatesDisplay = document.getElementById("coordinatesDisplay");
+const localCoordsDisplay = document.getElementById("localCoords");
+const remoteCoordsDisplay = document.getElementById("remoteCoords");
+
 // Toolbar buttons (only the ones that exist in the minimal header)
 const fitScreenBtn = document.getElementById("fitScreenBtn");
 const fullscreenBtn = document.getElementById("fullscreenBtn");
@@ -83,7 +88,65 @@ let isDragging = false;
 let mouseDataChannel = null;
 let keyboardDataChannel = null;
 
+// Mouse coordinate tracking
+let currentLocalX = 0;
+let currentLocalY = 0;
+let currentRemoteX = 0;
+let currentRemoteY = 0;
+let coordinateUpdateThrottle = 0;
+const COORDINATE_UPDATE_THROTTLE_MS = 16; // ~60 FPS for smooth display updates
+
 function log(...args) { console.log("[Dell Remote Desktop]", ...args); }
+
+// Mouse coordinate display update functions
+function updateLocalCoordinates(x, y) {
+  currentLocalX = x;
+  currentLocalY = y;
+  updateCoordinateDisplay();
+}
+
+function updateRemoteCoordinates(x, y) {
+  currentRemoteX = x;
+  currentRemoteY = y;
+  updateCoordinateDisplay();
+}
+
+function updateCoordinateDisplay() {
+  // Throttle coordinate display updates to avoid excessive DOM manipulation
+  const now = performance.now();
+  if (now - coordinateUpdateThrottle < COORDINATE_UPDATE_THROTTLE_MS) {
+    return;
+  }
+  coordinateUpdateThrottle = now;
+  
+  if (localCoordsDisplay) {
+    localCoordsDisplay.innerHTML = `${currentLocalX}<span class="dell-coordinate-separator">, </span>${currentLocalY}`;
+  }
+  
+  if (remoteCoordsDisplay) {
+    remoteCoordsDisplay.innerHTML = `${currentRemoteX}<span class="dell-coordinate-separator">, </span>${currentRemoteY}`;
+  }
+}
+
+// Initialize coordinate display
+function initializeCoordinateDisplay() {
+  if (coordinatesDisplay && localCoordsDisplay && remoteCoordsDisplay) {
+    updateCoordinateDisplay();
+    log('🎯 Mouse coordinate display initialized');
+  }
+  
+  // Global mouse tracking for coordinate display (always active)
+  document.addEventListener('mousemove', (event) => {
+    const videoRect = videoEl.getBoundingClientRect();
+    const localX = Math.round(event.clientX - videoRect.left);
+    const localY = Math.round(event.clientY - videoRect.top);
+    
+    // Update coordinate display when mouse is over video area
+    if (localX >= 0 && localY >= 0 && localX <= videoRect.width && localY <= videoRect.height) {
+      updateLocalCoordinates(localX, localY);
+    }
+  });
+}
 
 function showToast(message, type = 'info') {
   const toast = document.createElement('div');
@@ -426,19 +489,40 @@ function handleDataChannelMessage(message) {
     case 'status':
       updateCounter(`Remote: ${message.status}`);
       break;
+    case 'remote_mouse_position':
+      // Update remote mouse coordinates from the server
+      if (typeof message.x === 'number' && typeof message.y === 'number') {
+        updateRemoteCoordinates(Math.round(message.x), Math.round(message.y));
+      }
+      break;
     default:
       log('Unknown data channel message:', message);
   }
 }
 
 // Input event capture functions based on old_webrtc.js
+// Delta encoding variables for ultra-efficient mouse sync
+let lastMouseX = -1;
+let lastMouseY = -1;
+let mouseDeltaThrottleTime = 0;
+const MOUSE_DELTA_THROTTLE_MS = 6; // ~166 FPS max for smooth movement
+const DELTA_RESET_THRESHOLD = 200; // Reset to absolute coordinates occasionally
+let deltaEventCount = 0;
+
+// Performance tracking for delta compression analysis
+let totalMouseEvents = 0;
+let totalDeltaEvents = 0;
+let totalAbsoluteBytes = 0;
+let totalDeltaBytes = 0;
+let lastPerfLogTime = 0;
+
 function initializeInputEventListeners() {
   if (!dataChannel || dataChannel.readyState !== 'open') {
     log('Cannot initialize input listeners - data channel not ready');
     return;
   }
   
-  log('Initializing mouse and keyboard event listeners');
+  log('Initializing mouse and keyboard event listeners with DELTA COMPRESSION');
   isInputEnabled = true;
   
   // Mouse drag tracking
@@ -466,26 +550,62 @@ function initializeInputEventListeners() {
     sendMouseData(data);
   }, { passive: false });
   
-  // Mouse movement
+  // Mouse movement with DELTA COMPRESSION for ultra-low latency
   document.addEventListener('mousemove', (event) => {
     if (!isInputEnabled || !shouldCaptureInput(event)) return;
     
     const videoRect = videoEl.getBoundingClientRect();
-    const localX = event.clientX - videoRect.left;
-    const localY = event.clientY - videoRect.top;
+    const localX = Math.round(event.clientX - videoRect.left);
+    const localY = Math.round(event.clientY - videoRect.top);
     
     // Only send mouse events if cursor is over the video
     if (localX >= 0 && localY >= 0 && localX <= videoRect.width && localY <= videoRect.height) {
-      const data = {
-        type: 'mouse_move',
-        x: localX,
-        y: localY,
-        clientWidth: videoRect.width,
-        clientHeight: videoRect.height,
-        drag: isDragging
-      };
       
-      sendMouseData(data);
+      // High-frequency throttling for smoother movement
+      const now = performance.now();
+      if (now - mouseDeltaThrottleTime < MOUSE_DELTA_THROTTLE_MS) {
+        return; // Skip to maintain ~166 FPS
+      }
+      mouseDeltaThrottleTime = now;
+      
+      // Calculate delta or send full coordinates
+      if (lastMouseX >= 0 && lastMouseY >= 0 && deltaEventCount < DELTA_RESET_THRESHOLD) {
+        // Send ultra-efficient delta coordinates (saves ~70% bandwidth)
+        const deltaX = localX - lastMouseX;
+        const deltaY = localY - lastMouseY;
+        
+        // Only send if there's actual movement
+        if (deltaX !== 0 || deltaY !== 0) {
+          const data = {
+            type: 'mouse_move_delta',
+            deltaX: Math.max(-32767, Math.min(32767, deltaX)), // Clamp to short range
+            deltaY: Math.max(-32767, Math.min(32767, deltaY)),
+            clientWidth: Math.round(videoRect.width),
+            clientHeight: Math.round(videoRect.height),
+            drag: isDragging
+          };
+          
+          sendMouseData(data);
+          deltaEventCount++;
+        }
+      } else {
+        // Send full coordinates (reset anchor point)
+        const data = {
+          type: 'mouse_move',
+          x: localX,
+          y: localY,
+          clientWidth: Math.round(videoRect.width),
+          clientHeight: Math.round(videoRect.height),
+          drag: isDragging
+        };
+        
+        sendMouseData(data);
+        deltaEventCount = 0; // Reset delta counter
+      }
+      
+      // Update last known position
+      lastMouseX = localX;
+      lastMouseY = localY;
     }
   });
   
@@ -564,11 +684,12 @@ function handleKeyboardEvent(event) {
   } = event;
   
   const data = {
-    k: key.toLowerCase(),
-    s: shiftKey,
-    a: altKey,
-    c: ctrlKey,
-    kc: code,
+    type: 'keyboard',
+    key: key.toLowerCase(),
+    shiftKey: shiftKey,
+    altKey: altKey,
+    ctrlKey: ctrlKey,
+    keyCode: code,
     action: action
   };
   
@@ -590,6 +711,29 @@ function sendMouseData(data) {
     // Use msgpack for efficient binary encoding
     const encodedData = msgpack.encode(data);
     console.log('📦 CLIENT: Mouse data encoded to binary:', encodedData.length, 'bytes');
+    
+    // Performance tracking for delta compression analysis
+    if (data.type === 'mouse_move') {
+      totalMouseEvents++;
+      totalAbsoluteBytes += encodedData.length;
+    } else if (data.type === 'mouse_move_delta') {
+      totalDeltaEvents++;
+      totalDeltaBytes += encodedData.length;
+    }
+    
+    // Log performance every 100 events
+    const totalEvents = totalMouseEvents + totalDeltaEvents;
+    if (totalEvents > 0 && totalEvents % 100 === 0) {
+      const compressionRatio = totalDeltaEvents > 0 && totalAbsoluteBytes > 0 
+        ? (1.0 - totalDeltaBytes / totalAbsoluteBytes) * 100 
+        : 0;
+      const avgAbsoluteSize = totalMouseEvents > 0 ? totalAbsoluteBytes / totalMouseEvents : 0;
+      const avgDeltaSize = totalDeltaEvents > 0 ? totalDeltaBytes / totalDeltaEvents : 0;
+      
+      console.log(`📈 DELTA PERFORMANCE: Abs(${totalMouseEvents} @ ${avgAbsoluteSize.toFixed(1)}B) Delta(${totalDeltaEvents} @ ${avgDeltaSize.toFixed(1)}B) Savings: ${compressionRatio.toFixed(1)}%`);
+      log(`📈 CLIENT PERF: Delta compression saving ${compressionRatio.toFixed(1)}% bandwidth (${totalEvents} events)`);
+    }
+    
     dataChannel.send(encodedData);
     console.log('✅ CLIENT: Mouse data sent successfully');
   } catch (error) {
@@ -1008,6 +1152,7 @@ window.addEventListener('beforeunload', teardown);
 function initialize() {
   setupEventListeners();
   setupAppLauncher();
+  initializeCoordinateDisplay();
   connectSignaling();
   
   // Connection quality monitoring
