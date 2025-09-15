@@ -64,6 +64,13 @@ let mouseState = {
   capturing: false
 };
 
+// Keyboard event deduplication
+let keyboardState = {
+  lastKeyEvent: null,
+  lastKeyTime: 0,
+  pressedKeys: new Set() // Track which keys are currently pressed
+};
+
 // MessagePack encoding for ultra-fast input transmission
 function msgpackEncode(obj) {
   return JSON.stringify(obj); // Simplified for now, can add real MessagePack later
@@ -130,39 +137,55 @@ function updateQuality(info) {
 // Direct Input Handling Functions
 
 function sendKeyboardEvent(eventData) {
-  console.log('[DEBUG] sendKeyboardEvent called with:', eventData);
-  
-  if (!inputChannel) {
-    console.log('[DEBUG] Input channel is null');
-    log('⚠️ Input channel not available for keyboard event');
-    return false;
-  }
-  
-  if (inputChannel.readyState !== 'open') {
-    console.log('[DEBUG] Input channel state:', inputChannel.readyState);
-    log('⚠️ Input channel not ready for keyboard event, state:', inputChannel.readyState);
+  if (!inputChannel || inputChannel.readyState !== 'open') {
     return false;
   }
 
+  // Deduplication logic to prevent multiple events
+  const now = Date.now();
+  const keyId = eventData.code || eventData.key;
+  const eventKey = `${eventData.type}-${keyId}`;
+  
+  // Prevent duplicate events within 50ms
+  if (keyboardState.lastKeyEvent === eventKey && (now - keyboardState.lastKeyTime) < 50) {
+    console.log('[DEBUG] Ignoring duplicate keyboard event:', eventKey);
+    return false;
+  }
+  
+  // Track key press/release state to prevent duplicate keydowns
+  if (eventData.type === 'keydown') {
+    if (keyboardState.pressedKeys.has(keyId)) {
+      console.log('[DEBUG] Key already pressed, ignoring duplicate keydown:', keyId);
+      return false;
+    }
+    keyboardState.pressedKeys.add(keyId);
+  } else if (eventData.type === 'keyup') {
+    if (!keyboardState.pressedKeys.has(keyId)) {
+      console.log('[DEBUG] Key not pressed, ignoring orphaned keyup:', keyId);
+      return false;
+    }
+    keyboardState.pressedKeys.delete(keyId);
+  }
+  
+  keyboardState.lastKeyEvent = eventKey;
+  keyboardState.lastKeyTime = now;
+
   try {
     const message = msgpackEncode({
-      type: eventData.type,  // 'keydown' or 'keyup'
+      type: eventData.type,
       key: eventData.key,
       code: eventData.code,
       ctrlKey: eventData.ctrlKey,
       altKey: eventData.altKey,
       shiftKey: eventData.shiftKey,
-      timestamp: Date.now()
+      timestamp: now
     });
 
-    console.log('[DEBUG] Sending keyboard message:', message);
     inputChannel.send(message);
-    console.log('[DEBUG] Keyboard message sent successfully');
-    log('🎹 Sent keyboard event:', eventData.type, eventData.key);
+    console.log('[DEBUG] Sent keyboard event:', eventData.type, eventData.key);
     return true;
   } catch (error) {
     console.error('[DEBUG] Error sending keyboard event:', error);
-    log('❌ Error sending keyboard event:', error);
     return false;
   }
 }
@@ -184,16 +207,21 @@ function sendMouseEvent(eventData) {
 
   try {
     const rect = videoEl.getBoundingClientRect();
-    const relativeX = Math.round(eventData.clientX - rect.left);
-    const relativeY = Math.round(eventData.clientY - rect.top);
+    const relativeX = Math.max(0, Math.min(rect.width, eventData.clientX - rect.left));
+    const relativeY = Math.max(0, Math.min(rect.height, eventData.clientY - rect.top));
+
+    // Normalize to 0..65535 to avoid fit/scale issues on the host side
+    const normX = Math.round((relativeX / Math.max(1, rect.width)) * 65535);
+    const normY = Math.round((relativeY / Math.max(1, rect.height)) * 65535);
     
     const message = msgpackEncode({
       type: eventData.type,
-      x: relativeX,
-      y: relativeY,
+      x: normX,
+      y: normY,
       button: eventData.button || 0,
       deltaY: eventData.deltaY || 0,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      normalized: true
     });
 
     console.log('[DEBUG] Sending mouse message:', message);
@@ -822,6 +850,13 @@ async function handleOffer(msg) {
         updateChannelStatus('mouse', true);
         break;
         
+      case 'screen-share':
+        // Back-compat: older servers might label control channel 'screen-share'. Treat as control.
+        controlChannel = channel;
+        setupControlChannel(channel);
+        updateChannelStatus('control', true);
+        break;
+
       default:
         log(`Unknown channel: ${channel.label}`);
         break;
