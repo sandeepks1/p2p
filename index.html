@@ -248,39 +248,6 @@
       width: auto;
       height: auto;
       background-color: #000;
-      /* Show both local browser cursor AND remote desktop cursor for better UX */
-      /* Options: crosshair, pointer, default, grab, move */
-      cursor: crosshair;
-      transition: cursor 0.1s ease;
-    }
-    
-    /* Use crosshair cursor to distinguish from remote cursor */
-    .dell-video-wrapper {
-      cursor: crosshair;
-      transition: cursor 0.1s ease;
-    }
-    
-    /* Maintain crosshair cursor during video interaction */
-    .dell-video-container:hover video,
-    .dell-video-container:hover .dell-video-wrapper {
-      cursor: crosshair;
-    }
-    
-    /* Alternative cursor styles for different use cases */
-    .cursor-pointer video, .cursor-pointer .dell-video-wrapper {
-      cursor: pointer;
-    }
-    
-    .cursor-grab video, .cursor-grab .dell-video-wrapper {
-      cursor: grab;
-    }
-    
-    .cursor-grab video:active, .cursor-grab .dell-video-wrapper:active {
-      cursor: grabbing;
-    }
-    
-    .cursor-default video, .cursor-default .dell-video-wrapper {
-      cursor: default;
     }
 
     /* Fullscreen Styles */
@@ -298,7 +265,6 @@
       max-width: none;
       max-height: none;
       border-radius: 0;
-      cursor: crosshair;
     }
 
     .fullscreen .dell-video-wrapper {
@@ -756,90 +722,6 @@
       outline: 2px solid rgba(0, 125, 184, 0.8);
       outline-offset: 2px;
     }
-
-    /* Mouse Coordinate Display */
-    .dell-coordinates-display {
-      position: fixed;
-      top: 60px;
-      left: 15px;
-      z-index: 1003;
-      background: rgba(0, 32, 96, 0.95);
-      border: 1px solid rgba(0, 125, 184, 0.3);
-      border-radius: var(--dell-radius-sm);
-      padding: var(--dell-spacing-xs);
-      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-      font-size: 11px;
-      font-weight: 500;
-      color: white;
-      backdrop-filter: blur(10px);
-      user-select: none;
-      pointer-events: none;
-      opacity: 0.9;
-      transition: opacity 0.3s ease;
-    }
-
-    .dell-coordinate-item {
-      display: flex;
-      align-items: center;
-      margin-bottom: 2px;
-      gap: 6px;
-    }
-
-    .dell-coordinate-item:last-child {
-      margin-bottom: 0;
-    }
-
-    .dell-coordinate-label {
-      font-weight: 600;
-      min-width: 45px;
-      color: rgba(0, 125, 184, 1);
-    }
-
-    .dell-coordinate-values {
-      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-      color: #00ff88;
-      font-size: 10px;
-    }
-
-    .dell-coordinate-separator {
-      color: rgba(255, 255, 255, 0.5);
-    }
-
-    /* Hide coordinates in fullscreen unless hovered over video area */
-    .fullscreen .dell-coordinates-display {
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    .fullscreen .dell-video-container:hover .dell-coordinates-display {
-      opacity: 0.9;
-    }
-
-    /* Cursor Display Fixes */
-    .dell-video-container {
-      cursor: auto !important; /* Always show local browser cursor */
-    }
-
-    #remoteVideo {
-      cursor: crosshair; /* Show crosshair cursor over video for remote desktop */
-    }
-
-    /* Cursor style variations that can be toggled */
-    .cursor-pointer #remoteVideo {
-      cursor: pointer;
-    }
-
-    .cursor-grab #remoteVideo {
-      cursor: grab;
-    }
-
-    .cursor-grab #remoteVideo:active {
-      cursor: grabbing;
-    }
-
-    .cursor-default #remoteVideo {
-      cursor: default;
-    }
   </style>
 </head>
 <body>
@@ -866,11 +748,6 @@
           <button class="dell-tooltip-btn" id="fullscreenBtn" title="Fullscreen (F11)">
             <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
               <path d="M5.828 10.172a.5.5 0 0 0-.707 0l-4.096 4.096V11.5a.5.5 0 0 0-1 0v3.975a.5.5 0 0 0 .5.5H4.5a.5.5 0 0 0 0-1H1.732l4.096-4.096a.5.5 0 0 0 0-.707zm4.344 0a.5.5 0 0 1 .707 0l4.096 4.096V11.5a.5.5 0 1 1 1 0v3.975a.5.5 0 0 1-.5.5H11.5a.5.5 0 0 1 0-1h2.768l-4.096-4.096a.5.5 0 0 1 0-.707zm0-4.344a.5.5 0 0 0 .707 0l4.096-4.096V4.5a.5.5 0 1 0 1 0V.525a.5.5 0 0 0-.5-.5H11.5a.5.5 0 0 0 0 1h2.768l-4.096 4.096a.5.5 0 0 0 0 .707zm-4.344 0a.5.5 0 0 1-.707 0L1.025 1.732V4.5a.5.5 0 0 1-1 0V.525a.5.5 0 0 1 .5-.5H4.5a.5.5 0 0 1 0 1H1.732l4.096 4.096a.5.5 0 0 1 0 .707z"/>
-            </svg>
-          </button>
-          <button class="dell-tooltip-btn" id="cursorBtn" title="Toggle Cursor Style (Crosshair)">
-            <svg class="dell-icon" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
             </svg>
           </button>
         </div>
@@ -929,6 +806,17 @@
         </div>
       </div>
       
+      <!-- Channel Status -->
+      <div class="dell-tooltip-group">
+        <div class="dell-tooltip-label">Channels</div>
+        <div class="dell-tooltip-status">
+          <div class="dell-status-dot" id="controlChannelDot" title="Control Channel"></div>
+          <div class="dell-status-dot" id="inputChannelDot" title="Input Channel"></div>
+          <div class="dell-status-dot" id="mouseChannelDot" title="Mouse Channel"></div>
+          <span id="channelText" style="font-size: 10px; margin-left: 4px;">C•I•M</span>
+        </div>
+      </div>
+      
       <!-- Vertical Divider -->
       <div style="width: 1px; height: 32px; background: rgba(255, 255, 255, 0.2);"></div>
       
@@ -968,18 +856,6 @@
     </button>
   </div>
 
-  <!-- Mouse Coordinates Display -->
-  <div class="dell-coordinates-display" id="coordinatesDisplay">
-    <div class="dell-coordinate-item">
-      <span class="dell-coordinate-label">Local:</span>
-      <span class="dell-coordinate-values" id="localCoords">0<span class="dell-coordinate-separator">, </span>0</span>
-    </div>
-    <div class="dell-coordinate-item">
-      <span class="dell-coordinate-label">Remote:</span>
-      <span class="dell-coordinate-values" id="remoteCoords">0<span class="dell-coordinate-separator">, </span>0</span>
-    </div>
-  </div>
-
   <!-- Video Container -->
   <div class="dell-video-container" id="videoContainer">
     <div class="dell-loading-screen" id="loadingScreen">
@@ -996,8 +872,6 @@
     </div>
   </div>
 
-  <!-- MessagePack for efficient binary data encoding -->
-  <script src="https://cdn.jsdelivr.net/npm/msgpack-lite@0.1.26/dist/msgpack.min.js"></script>
   <script src="webrtc.js"></script>
 </body>
 </html>
