@@ -756,6 +756,64 @@
       outline: 2px solid rgba(0, 125, 184, 0.8);
       outline-offset: 2px;
     }
+
+    /* Mouse Coordinate Display */
+    .dell-coordinates-display {
+      position: fixed;
+      top: 60px;
+      left: 15px;
+      z-index: 1003;
+      background: rgba(0, 32, 96, 0.95);
+      border: 1px solid rgba(0, 125, 184, 0.3);
+      border-radius: var(--dell-radius-sm);
+      padding: var(--dell-spacing-xs);
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      color: white;
+      backdrop-filter: blur(10px);
+      user-select: none;
+      pointer-events: none;
+      opacity: 0.9;
+      transition: opacity 0.3s ease;
+    }
+
+    .dell-coordinate-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 2px;
+      gap: 6px;
+    }
+
+    .dell-coordinate-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .dell-coordinate-label {
+      font-weight: 600;
+      min-width: 45px;
+      color: rgba(0, 125, 184, 1);
+    }
+
+    .dell-coordinate-values {
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      color: #00ff88;
+      font-size: 10px;
+    }
+
+    .dell-coordinate-separator {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Hide coordinates in fullscreen unless hovered over video area */
+    .fullscreen .dell-coordinates-display {
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .fullscreen .dell-video-container:hover .dell-coordinates-display {
+      opacity: 0.9;
+    }
   </style>
 </head>
 <body>
@@ -882,6 +940,18 @@
       </svg>
       Exit
     </button>
+  </div>
+
+  <!-- Mouse Coordinates Display -->
+  <div class="dell-coordinates-display" id="coordinatesDisplay">
+    <div class="dell-coordinate-item">
+      <span class="dell-coordinate-label">Local:</span>
+      <span class="dell-coordinate-values" id="localCoords">0<span class="dell-coordinate-separator">, </span>0</span>
+    </div>
+    <div class="dell-coordinate-item">
+      <span class="dell-coordinate-label">Remote:</span>
+      <span class="dell-coordinate-values" id="remoteCoords">0<span class="dell-coordinate-separator">, </span>0</span>
+    </div>
   </div>
 
   <!-- Video Container -->
