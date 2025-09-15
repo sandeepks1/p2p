@@ -130,61 +130,83 @@ function updateQuality(info) {
 // Direct Input Handling Functions
 
 function sendKeyboardEvent(eventData) {
-  if (!inputChannel || inputChannel.readyState !== 'open') {
-    log('⚠️ Input channel not ready for keyboard event');
+  console.log('[DEBUG] sendKeyboardEvent called with:', eventData);
+  
+  if (!inputChannel) {
+    console.log('[DEBUG] Input channel is null');
+    log('⚠️ Input channel not available for keyboard event');
+    return false;
+  }
+  
+  if (inputChannel.readyState !== 'open') {
+    console.log('[DEBUG] Input channel state:', inputChannel.readyState);
+    log('⚠️ Input channel not ready for keyboard event, state:', inputChannel.readyState);
     return false;
   }
 
   try {
     const message = msgpackEncode({
-      type: 'keyboard',
+      type: eventData.type,  // 'keydown' or 'keyup'
       key: eventData.key,
-      keyCode: eventData.code,
-      action: eventData.type === 'keydown' ? 'press' : 'release',
-      shiftKey: eventData.shiftKey,
+      code: eventData.code,
       ctrlKey: eventData.ctrlKey,
       altKey: eventData.altKey,
+      shiftKey: eventData.shiftKey,
       timestamp: Date.now()
     });
 
+    console.log('[DEBUG] Sending keyboard message:', message);
     inputChannel.send(message);
-    log('🎹 Sent keyboard event directly to UnifiedCaptureHelper:', eventData.key);
+    console.log('[DEBUG] Keyboard message sent successfully');
+    log('🎹 Sent keyboard event:', eventData.type, eventData.key);
     return true;
   } catch (error) {
+    console.error('[DEBUG] Error sending keyboard event:', error);
     log('❌ Error sending keyboard event:', error);
     return false;
   }
 }
 
 function sendMouseEvent(eventData) {
-  if (!mouseChannel || mouseChannel.readyState !== 'open') {
-    log('⚠️ Mouse channel not ready for mouse event');
+  console.log('[DEBUG] sendMouseEvent called with:', eventData.type, eventData.clientX, eventData.clientY);
+  
+  if (!mouseChannel) {
+    console.log('[DEBUG] Mouse channel is null');
+    log('⚠️ Mouse channel not available for mouse event');
+    return false;
+  }
+  
+  if (mouseChannel.readyState !== 'open') {
+    console.log('[DEBUG] Mouse channel state:', mouseChannel.readyState);
+    log('⚠️ Mouse channel not ready for mouse event, state:', mouseChannel.readyState);
     return false;
   }
 
   try {
     const rect = videoEl.getBoundingClientRect();
+    const relativeX = Math.round(eventData.clientX - rect.left);
+    const relativeY = Math.round(eventData.clientY - rect.top);
     
     const message = msgpackEncode({
       type: eventData.type,
-      x: Math.round(eventData.clientX - rect.left),
-      y: Math.round(eventData.clientY - rect.top),
-      clientWidth: Math.round(rect.width),
-      clientHeight: Math.round(rect.height),
-      button: eventData.button,
-      buttons: eventData.buttons,
+      x: relativeX,
+      y: relativeY,
+      button: eventData.button || 0,
       deltaY: eventData.deltaY || 0,
       timestamp: Date.now()
     });
 
+    console.log('[DEBUG] Sending mouse message:', message);
     mouseChannel.send(message);
+    console.log('[DEBUG] Mouse message sent successfully');
     
     // Only log occasionally to avoid spam
-    if (eventData.type !== 'mousemove' || Date.now() % 100 === 0) {
-      log('🖱️ Sent mouse event directly to UnifiedCaptureHelper:', eventData.type);
+    if (eventData.type !== 'mousemove' || Date.now() % 1000 === 0) {
+      log('🖱️ Sent mouse event:', eventData.type, `(${relativeX}, ${relativeY})`);
     }
     return true;
   } catch (error) {
+    console.error('[DEBUG] Error sending mouse event:', error);
     log('❌ Error sending mouse event:', error);
     return false;
   }
@@ -194,12 +216,24 @@ function sendMouseEvent(eventData) {
 function setupInputCapture() {
   if (!videoEl) return;
 
+  // Make video focusable and focus it
+  videoEl.tabIndex = 0;
+  videoEl.focus();
+  console.log('[DEBUG] Video element focused for input capture');
+
   // Prevent context menu
   videoEl.addEventListener('contextmenu', (e) => e.preventDefault());
+  
+  // Focus video on click
+  videoEl.addEventListener('click', (e) => {
+    videoEl.focus();
+    console.log('[DEBUG] Video element focused on click');
+  });
 
   // Mouse events - Direct to UnifiedCaptureHelper
   videoEl.addEventListener('mousedown', (e) => {
     e.preventDefault();
+    console.log('[DEBUG] Mouse down event:', e.clientX, e.clientY, 'button:', e.button);
     mouseState.capturing = true;
     sendMouseEvent({ 
       type: 'mousedown', 
@@ -211,6 +245,7 @@ function setupInputCapture() {
 
   videoEl.addEventListener('mouseup', (e) => {
     e.preventDefault();
+    console.log('[DEBUG] Mouse up event:', e.clientX, e.clientY, 'button:', e.button);
     sendMouseEvent({ 
       type: 'mouseup', 
       clientX: e.clientX, 
@@ -222,13 +257,13 @@ function setupInputCapture() {
 
   videoEl.addEventListener('mousemove', (e) => {
     e.preventDefault();
-    if (mouseState.capturing) {
-      sendMouseEvent({ 
-        type: 'mousemove', 
-        clientX: e.clientX, 
-        clientY: e.clientY 
-      });
-    }
+    console.log('[DEBUG] Mouse move event:', e.clientX, e.clientY, 'capturing:', mouseState.capturing);
+    // Send all mouse moves, not just when capturing
+    sendMouseEvent({ 
+      type: 'mousemove', 
+      clientX: e.clientX, 
+      clientY: e.clientY 
+    });
   });
 
   videoEl.addEventListener('click', (e) => {
@@ -253,22 +288,33 @@ function setupInputCapture() {
 
   // Keyboard events - Direct to UnifiedCaptureHelper  
   document.addEventListener('keydown', (e) => {
+    console.log('[DEBUG] Keydown event:', e.key, e.code, 'activeElement:', document.activeElement?.tagName);
+    
     // Allow some browser shortcuts
     if (e.key === 'F11' || (e.ctrlKey && ['f', '1'].includes(e.key))) {
+      console.log('[DEBUG] Allowing browser shortcut:', e.key);
       return; // Handle locally
     }
 
-    // Send all other keys directly to remote desktop
-    if (mouseState.capturing || document.activeElement === videoEl) {
+    // Send ALL keyboard events when video is focused or visible
+    if (videoEl && (document.activeElement === videoEl || document.activeElement === document.body)) {
+      console.log('[DEBUG] Preventing default and sending keyboard event');
       e.preventDefault();
       sendKeyboardEvent(e);
+    } else {
+      console.log('[DEBUG] Not sending keyboard event - wrong focus');
     }
   });
 
   document.addEventListener('keyup', (e) => {
-    if (mouseState.capturing || document.activeElement === videoEl) {
+    console.log('[DEBUG] Keyup event:', e.key, e.code);
+    
+    if (videoEl && (document.activeElement === videoEl || document.activeElement === document.body)) {
+      console.log('[DEBUG] Sending keyup event');
       e.preventDefault();
       sendKeyboardEvent(e);
+    } else {
+      console.log('[DEBUG] Not sending keyup event - wrong focus');
     }
   });
 
