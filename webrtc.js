@@ -94,7 +94,7 @@ let currentLocalY = 0;
 let currentRemoteX = 0;
 let currentRemoteY = 0;
 let coordinateUpdateThrottle = 0;
-const COORDINATE_UPDATE_THROTTLE_MS = 16; // ~60 FPS for smooth display updates
+const COORDINATE_UPDATE_THROTTLE_MS = 8; // ~120 FPS for smooth display updates
 
 function log(...args) { console.log("[Dell Remote Desktop]", ...args); }
 
@@ -119,13 +119,16 @@ function updateCoordinateDisplay() {
   }
   coordinateUpdateThrottle = now;
   
-  if (localCoordsDisplay) {
-    localCoordsDisplay.innerHTML = `${currentLocalX}<span class="dell-coordinate-separator">, </span>${currentLocalY}`;
-  }
-  
-  if (remoteCoordsDisplay) {
-    remoteCoordsDisplay.innerHTML = `${currentRemoteX}<span class="dell-coordinate-separator">, </span>${currentRemoteY}`;
-  }
+  // Use requestAnimationFrame for smoother updates
+  requestAnimationFrame(() => {
+    if (localCoordsDisplay) {
+      localCoordsDisplay.innerHTML = `${currentLocalX}<span class="dell-coordinate-separator">, </span>${currentLocalY}`;
+    }
+    
+    if (remoteCoordsDisplay) {
+      remoteCoordsDisplay.innerHTML = `${currentRemoteX}<span class="dell-coordinate-separator">, </span>${currentRemoteY}`;
+    }
+  });
 }
 
 // Initialize coordinate display
@@ -134,18 +137,6 @@ function initializeCoordinateDisplay() {
     updateCoordinateDisplay();
     log('🎯 Mouse coordinate display initialized');
   }
-  
-  // Global mouse tracking for coordinate display (always active)
-  document.addEventListener('mousemove', (event) => {
-    const videoRect = videoEl.getBoundingClientRect();
-    const localX = Math.round(event.clientX - videoRect.left);
-    const localY = Math.round(event.clientY - videoRect.top);
-    
-    // Update coordinate display when mouse is over video area
-    if (localX >= 0 && localY >= 0 && localX <= videoRect.width && localY <= videoRect.height) {
-      updateLocalCoordinates(localX, localY);
-    }
-  });
 }
 
 function showToast(message, type = 'info') {
@@ -505,7 +496,7 @@ function handleDataChannelMessage(message) {
 let lastMouseX = -1;
 let lastMouseY = -1;
 let mouseDeltaThrottleTime = 0;
-const MOUSE_DELTA_THROTTLE_MS = 6; // ~166 FPS max for smooth movement
+const MOUSE_DELTA_THROTTLE_MS = 4; // ~250 FPS max for ultra-smooth movement
 const DELTA_RESET_THRESHOLD = 200; // Reset to absolute coordinates occasionally
 let deltaEventCount = 0;
 
@@ -525,20 +516,20 @@ function initializeInputEventListeners() {
   log('Initializing mouse and keyboard event listeners with DELTA COMPRESSION');
   isInputEnabled = true;
   
-  // Mouse drag tracking
-  document.addEventListener('mousedown', (event) => {
-    if (!isInputEnabled || !shouldCaptureInput(event)) return;
+  // Mouse drag tracking - optimized to video element
+  videoEl.addEventListener('mousedown', (event) => {
+    if (!isInputEnabled) return;
     isDragging = true;
   });
   
-  document.addEventListener('mouseup', (event) => {
-    if (!isInputEnabled || !shouldCaptureInput(event)) return;
+  videoEl.addEventListener('mouseup', (event) => {
+    if (!isInputEnabled) return;
     isDragging = false;
   });
   
-  // Mouse wheel/scroll events
-  document.addEventListener('wheel', (event) => {
-    if (!isInputEnabled || !shouldCaptureInput(event)) return;
+  // Mouse wheel/scroll events - optimized to video element
+  videoEl.addEventListener('wheel', (event) => {
+    if (!isInputEnabled) return;
     
     event.preventDefault();
     const scrollDirection = event.deltaY > 0 ? 'down' : 'up';
@@ -550,21 +541,24 @@ function initializeInputEventListeners() {
     sendMouseData(data);
   }, { passive: false });
   
-  // Mouse movement with DELTA COMPRESSION for ultra-low latency
-  document.addEventListener('mousemove', (event) => {
-    if (!isInputEnabled || !shouldCaptureInput(event)) return;
-    
+  // Optimized mouse movement with DELTA COMPRESSION for ultra-low latency
+  videoEl.addEventListener('mousemove', (event) => {
     const videoRect = videoEl.getBoundingClientRect();
     const localX = Math.round(event.clientX - videoRect.left);
     const localY = Math.round(event.clientY - videoRect.top);
     
-    // Only send mouse events if cursor is over the video
-    if (localX >= 0 && localY >= 0 && localX <= videoRect.width && localY <= videoRect.height) {
+    // Update coordinate display (lightweight operation)
+    updateLocalCoordinates(localX, localY);
+    
+    if (!isInputEnabled) return;
+    
+    // Optimized bounds checking
+    if (localX < 0 || localY < 0 || localX > videoRect.width || localY > videoRect.height) return;
       
       // High-frequency throttling for smoother movement
       const now = performance.now();
       if (now - mouseDeltaThrottleTime < MOUSE_DELTA_THROTTLE_MS) {
-        return; // Skip to maintain ~166 FPS
+        return; // Skip to maintain ~250 FPS
       }
       mouseDeltaThrottleTime = now;
       
@@ -609,9 +603,9 @@ function initializeInputEventListeners() {
     }
   });
   
-  // Mouse clicks
-  document.addEventListener('click', (event) => {
-    if (!isInputEnabled || !shouldCaptureInput(event)) return;
+  // Mouse clicks - optimized to video element
+  videoEl.addEventListener('click', (event) => {
+    if (!isInputEnabled) return;
     
     event.preventDefault();
     const data = {
@@ -621,9 +615,9 @@ function initializeInputEventListeners() {
     sendMouseData(data);
   });
   
-  // Right-click context menu
-  document.addEventListener('contextmenu', (event) => {
-    if (!isInputEnabled || !shouldCaptureInput(event)) return;
+  // Right-click context menu - optimized to video element
+  videoEl.addEventListener('contextmenu', (event) => {
+    if (!isInputEnabled) return;
     
     event.preventDefault();
     const data = {
