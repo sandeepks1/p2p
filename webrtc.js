@@ -554,53 +554,52 @@ function initializeInputEventListeners() {
     
     // Optimized bounds checking
     if (localX < 0 || localY < 0 || localX > videoRect.width || localY > videoRect.height) return;
+    
+    // High-frequency throttling for smoother movement
+    const now = performance.now();
+    if (now - mouseDeltaThrottleTime < MOUSE_DELTA_THROTTLE_MS) {
+      return; // Skip to maintain ~250 FPS
+    }
+    mouseDeltaThrottleTime = now;
+    
+    // Calculate delta or send full coordinates
+    if (lastMouseX >= 0 && lastMouseY >= 0 && deltaEventCount < DELTA_RESET_THRESHOLD) {
+      // Send ultra-efficient delta coordinates (saves ~70% bandwidth)
+      const deltaX = localX - lastMouseX;
+      const deltaY = localY - lastMouseY;
       
-      // High-frequency throttling for smoother movement
-      const now = performance.now();
-      if (now - mouseDeltaThrottleTime < MOUSE_DELTA_THROTTLE_MS) {
-        return; // Skip to maintain ~250 FPS
-      }
-      mouseDeltaThrottleTime = now;
-      
-      // Calculate delta or send full coordinates
-      if (lastMouseX >= 0 && lastMouseY >= 0 && deltaEventCount < DELTA_RESET_THRESHOLD) {
-        // Send ultra-efficient delta coordinates (saves ~70% bandwidth)
-        const deltaX = localX - lastMouseX;
-        const deltaY = localY - lastMouseY;
-        
-        // Only send if there's actual movement
-        if (deltaX !== 0 || deltaY !== 0) {
-          const data = {
-            type: 'mouse_move_delta',
-            deltaX: Math.max(-32767, Math.min(32767, deltaX)), // Clamp to short range
-            deltaY: Math.max(-32767, Math.min(32767, deltaY)),
-            clientWidth: Math.round(videoRect.width),
-            clientHeight: Math.round(videoRect.height),
-            drag: isDragging
-          };
-          
-          sendMouseData(data);
-          deltaEventCount++;
-        }
-      } else {
-        // Send full coordinates (reset anchor point)
+      // Only send if there's actual movement
+      if (deltaX !== 0 || deltaY !== 0) {
         const data = {
-          type: 'mouse_move',
-          x: localX,
-          y: localY,
+          type: 'mouse_move_delta',
+          deltaX: Math.max(-32767, Math.min(32767, deltaX)), // Clamp to short range
+          deltaY: Math.max(-32767, Math.min(32767, deltaY)),
           clientWidth: Math.round(videoRect.width),
           clientHeight: Math.round(videoRect.height),
           drag: isDragging
         };
         
         sendMouseData(data);
-        deltaEventCount = 0; // Reset delta counter
+        deltaEventCount++;
       }
+    } else {
+      // Send full coordinates (reset anchor point)
+      const data = {
+        type: 'mouse_move',
+        x: localX,
+        y: localY,
+        clientWidth: Math.round(videoRect.width),
+        clientHeight: Math.round(videoRect.height),
+        drag: isDragging
+      };
       
-      // Update last known position
-      lastMouseX = localX;
-      lastMouseY = localY;
+      sendMouseData(data);
+      deltaEventCount = 0; // Reset delta counter
     }
+    
+    // Update last known position
+    lastMouseX = localX;
+    lastMouseY = localY;
   });
   
   // Mouse clicks - optimized to video element
