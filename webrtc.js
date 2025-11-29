@@ -5,6 +5,10 @@ const SIGNALING_SERVER_URL = "wss://signalling-server-oxaw.onrender.com/ws";
 const DEVICE_ID = "device001";
 const AUTH_CODE = "secret";
 
+// WDA Service Configuration
+let WDA_SERVICE_IP = null;
+let WDA_SERVICE_PORT = 8080;
+
 // Enhanced ICE server configuration
 const rtcConfig = {
   iceServers: [
@@ -46,9 +50,9 @@ const tooltipPanel = document.getElementById("tooltipPanel");
 
 // WebRTC and Channel variables
 let socket, pc;
-let controlChannel = null;    // For app launching, control commands (Service)
-let inputChannel = null;      // For keyboard events (Direct to UnifiedCaptureHelper)
-let mouseChannel = null;      // For mouse events (Direct to UnifiedCaptureHelper)
+let controlChannel = null;
+let inputChannel = null;
+let mouseChannel = null;
 let isFullscreen = false;
 let connectionStats = { bitrate: 0, latency: 0 };
 
@@ -68,12 +72,12 @@ let mouseState = {
 let keyboardState = {
   lastKeyEvent: null,
   lastKeyTime: 0,
-  pressedKeys: new Set() // Track which keys are currently pressed
+  pressedKeys: new Set()
 };
 
 // MessagePack encoding for ultra-fast input transmission
 function msgpackEncode(obj) {
-  return JSON.stringify(obj); // Simplified for now, can add real MessagePack later
+  return JSON.stringify(obj);
 }
 
 function log(...args) { 
@@ -95,6 +99,226 @@ function showToast(message, type = 'info') {
     toast.classList.remove('show');
     setTimeout(() => toast.remove(), 300);
   }, 3000);
+}
+
+// WDA Service Control Functions
+async function callWDAService(endpoint) {
+  if (!WDA_SERVICE_IP) {
+    log('❌ WDA Service IP not configured');
+    showToast('WDA Service IP not configured', 'error');
+    return false;
+  }
+
+  const url = `http://${WDA_SERVICE_IP}:${WDA_SERVICE_PORT}/${endpoint}`;
+  
+  try {
+    log(`📞 Calling WDA Service: ${url}`);
+    const response = await fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    log(`✅ WDA Service response:`, data);
+    return data;
+  } catch (error) {
+    log(`❌ WDA Service error:`, error);
+    showToast(`WDA Service error: ${error.message}`, 'error');
+    return null;
+  }
+}
+
+async function connectRemoteService() {
+  log('🔌 Connecting to remote service...');
+  showToast('Starting MyDellSecureDesktopLauncher service...', 'info');
+  
+  const result = await callWDAService('connectremote');
+  
+  if (result && result.status === 'success') {
+    log('✅ Remote service started successfully');
+    showToast('Service started successfully', 'success');
+    return true;
+  } else {
+    log('❌ Failed to start remote service');
+    showToast('Failed to start remote service', 'error');
+    return false;
+  }
+}
+
+async function disconnectRemoteService() {
+  log('🔌 Disconnecting from remote service...');
+  showToast('Stopping MyDellSecureDesktopLauncher service...', 'info');
+  
+  const result = await callWDAService('disconnectremote');
+  
+  if (result && result.status === 'success') {
+    log('✅ Remote service stopped successfully');
+    showToast('Service stopped successfully', 'success');
+    return true;
+  } else {
+    log('❌ Failed to stop remote service');
+    showToast('Failed to stop remote service', 'warning');
+    return false;
+  }
+}
+
+function promptForDeviceIP() {
+  return new Promise((resolve) => {
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    `;
+
+    // Create modal dialog
+    const dialog = document.createElement('div');
+    dialog.style.cssText = `
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      width: 400px;
+      max-width: 90%;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    `;
+
+    dialog.innerHTML = `
+      <div style="display: flex; align-items: center; margin-bottom: 20px;">
+        <svg width="32" height="32" viewBox="0 0 32 32" style="margin-right: 12px;">
+          <rect width="32" height="32" rx="6" fill="#0076CE"/>
+          <path d="M8 12h16v2H8zm0 4h16v2H8zm0 4h10v2H8z" fill="white"/>
+        </svg>
+        <h2 style="margin: 0; font-size: 20px; font-weight: 600; color: #333;">
+          WDA Mock Service Configuration
+        </h2>
+      </div>
+      
+      <p style="margin: 0 0 16px 0; color: #666; font-size: 14px;">
+        Enter the IP address of the device running the mockWDA service:
+      </p>
+      
+      <input 
+        type="text" 
+        id="ipInput" 
+        placeholder="e.g., 192.168.1.100" 
+        value="localhost"
+        style="
+          width: 100%;
+          padding: 10px 12px;
+          border: 2px solid #ddd;
+          border-radius: 4px;
+          font-size: 14px;
+          box-sizing: border-box;
+          margin-bottom: 20px;
+        "
+      />
+      
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button 
+          id="cancelBtn"
+          style="
+            padding: 10px 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            color: #333;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 500;
+          "
+        >
+          Cancel
+        </button>
+        <button 
+          id="connectBtn"
+          style="
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            background: #0076CE;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 500;
+          "
+        >
+          Connect
+        </button>
+      </div>
+    `;
+
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+
+    const ipInput = dialog.querySelector('#ipInput');
+    const connectBtn = dialog.querySelector('#connectBtn');
+    const cancelBtn = dialog.querySelector('#cancelBtn');
+
+    // Focus input
+    ipInput.focus();
+    ipInput.select();
+
+    // Handle connect button
+    const handleConnect = () => {
+      const ip = ipInput.value.trim();
+      if (ip) {
+        WDA_SERVICE_IP = ip;
+        log(`✅ WDA Service IP configured: ${ip}`);
+        document.body.removeChild(overlay);
+        resolve(ip);
+      } else {
+        ipInput.style.borderColor = '#e74c3c';
+        showToast('Please enter a valid IP address', 'error');
+      }
+    };
+
+    // Handle cancel button
+    const handleCancel = () => {
+      document.body.removeChild(overlay);
+      resolve(null);
+    };
+
+    connectBtn.addEventListener('click', handleConnect);
+    cancelBtn.addEventListener('click', handleCancel);
+    
+    // Enter key to connect
+    ipInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        handleConnect();
+      }
+    });
+
+    // Hover effects
+    connectBtn.addEventListener('mouseenter', () => {
+      connectBtn.style.background = '#005a9e';
+    });
+    connectBtn.addEventListener('mouseleave', () => {
+      connectBtn.style.background = '#0076CE';
+    });
+
+    cancelBtn.addEventListener('mouseenter', () => {
+      cancelBtn.style.background = '#f5f5f5';
+    });
+    cancelBtn.addEventListener('mouseleave', () => {
+      cancelBtn.style.background = 'white';
+    });
+  });
 }
 
 function updateStatus(text, connected = false) { 
@@ -141,18 +365,15 @@ function sendKeyboardEvent(eventData) {
     return false;
   }
 
-  // Deduplication logic to prevent multiple events
   const now = Date.now();
   const keyId = eventData.code || eventData.key;
   const eventKey = `${eventData.type}-${keyId}`;
   
-  // Prevent duplicate events within 50ms
   if (keyboardState.lastKeyEvent === eventKey && (now - keyboardState.lastKeyTime) < 50) {
     console.log('[DEBUG] Ignoring duplicate keyboard event:', eventKey);
     return false;
   }
   
-  // Track key press/release state to prevent duplicate keydowns
   if (eventData.type === 'keydown') {
     if (keyboardState.pressedKeys.has(keyId)) {
       console.log('[DEBUG] Key already pressed, ignoring duplicate keydown:', keyId);
@@ -210,7 +431,6 @@ function sendMouseEvent(eventData) {
     const relativeX = Math.max(0, Math.min(rect.width, eventData.clientX - rect.left));
     const relativeY = Math.max(0, Math.min(rect.height, eventData.clientY - rect.top));
 
-    // Normalize to 0..65535 to avoid fit/scale issues on the host side
     const normX = Math.round((relativeX / Math.max(1, rect.width)) * 65535);
     const normY = Math.round((relativeY / Math.max(1, rect.height)) * 65535);
     
@@ -228,7 +448,6 @@ function sendMouseEvent(eventData) {
     mouseChannel.send(message);
     console.log('[DEBUG] Mouse message sent successfully');
     
-    // Only log occasionally to avoid spam
     if (eventData.type !== 'mousemove' || Date.now() % 1000 === 0) {
       log('🖱️ Sent mouse event:', eventData.type, `(${relativeX}, ${relativeY})`);
     }
@@ -244,21 +463,17 @@ function sendMouseEvent(eventData) {
 function setupInputCapture() {
   if (!videoEl) return;
 
-  // Make video focusable and focus it
   videoEl.tabIndex = 0;
   videoEl.focus();
   console.log('[DEBUG] Video element focused for input capture');
 
-  // Prevent context menu
   videoEl.addEventListener('contextmenu', (e) => e.preventDefault());
   
-  // Focus video on click
   videoEl.addEventListener('click', (e) => {
     videoEl.focus();
     console.log('[DEBUG] Video element focused on click');
   });
 
-  // Mouse events - Direct to UnifiedCaptureHelper
   videoEl.addEventListener('mousedown', (e) => {
     e.preventDefault();
     console.log('[DEBUG] Mouse down event:', e.clientX, e.clientY, 'button:', e.button);
@@ -286,7 +501,6 @@ function setupInputCapture() {
   videoEl.addEventListener('mousemove', (e) => {
     e.preventDefault();
     console.log('[DEBUG] Mouse move event:', e.clientX, e.clientY, 'capturing:', mouseState.capturing);
-    // Send all mouse moves, not just when capturing
     sendMouseEvent({ 
       type: 'mousemove', 
       clientX: e.clientX, 
@@ -314,17 +528,14 @@ function setupInputCapture() {
     });
   });
 
-  // Keyboard events - Direct to UnifiedCaptureHelper  
   document.addEventListener('keydown', (e) => {
     console.log('[DEBUG] Keydown event:', e.key, e.code, 'activeElement:', document.activeElement?.tagName);
     
-    // Allow some browser shortcuts
     if (e.key === 'F11' || (e.ctrlKey && ['f', '1'].includes(e.key))) {
       console.log('[DEBUG] Allowing browser shortcut:', e.key);
-      return; // Handle locally
+      return;
     }
 
-    // Send ALL keyboard events when video is focused or visible
     if (videoEl && (document.activeElement === videoEl || document.activeElement === document.body)) {
       console.log('[DEBUG] Preventing default and sending keyboard event');
       e.preventDefault();
@@ -349,7 +560,7 @@ function setupInputCapture() {
   log('✅ Direct input capture setup complete - bypassing service');
 }
 
-// Control Channel Functions (for Service communication)
+// Control Channel Functions
 function launchRemoteApp(appName) {
   if (!controlChannel || controlChannel.readyState !== 'open') {
     showToast('Control channel not ready', 'error');
@@ -457,7 +668,7 @@ function fitToScreen() {
   }
 }
 
-// Screenshot and Recording (unchanged)
+// Screenshot and Recording
 function takeScreenshot() {
   if (!videoEl.videoWidth) return;
   
@@ -634,7 +845,6 @@ function setupEventListeners() {
     });
   }
 
-  // Keyboard shortcuts (global)
   document.addEventListener('keydown', (e) => {
     switch (e.key) {
       case 'F11':
@@ -655,7 +865,6 @@ function setupEventListeners() {
     }
   });
 
-  // Mouse events for fullscreen overlay
   if (videoContainer) {
     videoContainer.addEventListener('mousemove', () => {
       if (isFullscreen && fullscreenOverlay) {
@@ -668,7 +877,6 @@ function setupEventListeners() {
     });
   }
   
-  // Tooltip functionality
   if (tooltipTrigger && tooltipPanel) {
     let tooltipTimeout;
     
@@ -795,7 +1003,6 @@ async function handleOffer(msg) {
     updateQuality("HD Quality • Active");
     fitToScreen();
     
-    // Setup input capture after video is ready
     setupInputCapture();
   };
 
@@ -826,7 +1033,6 @@ async function handleOffer(msg) {
     log("Connection state:", pc.connectionState);
   };
 
-  // Handle multiple incoming DataChannels from server
   pc.ondatachannel = event => {
     const channel = event.channel;
     log(`🔗 DataChannel received: ${channel.label}`);
@@ -851,7 +1057,6 @@ async function handleOffer(msg) {
         break;
         
       case 'screen-share':
-        // Back-compat: older servers might label control channel 'screen-share'. Treat as control.
         controlChannel = channel;
         setupControlChannel(channel);
         updateChannelStatus('control', true);
@@ -926,7 +1131,6 @@ function setupInputChannel(channel) {
     log('Input channel error:', error);
   };
   
-  // Input channel is outbound only
   channel.onmessage = e => {
     log('Input channel feedback:', e.data);
   };
@@ -948,15 +1152,17 @@ function setupMouseChannel(channel) {
     log('Mouse channel error:', error);
   };
   
-  // Mouse channel is outbound only
   channel.onmessage = e => {
     log('Mouse channel feedback:', e.data);
   };
 }
 
-function disconnect() {
+async function disconnect() {
   log("User initiated disconnect");
   showToast('Disconnecting...', 'warning');
+  
+  // Call WDA Service disconnect API
+  await disconnectRemoteService();
   
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify({ type: 'disconnect', deviceId: DEVICE_ID }));
@@ -980,12 +1186,10 @@ function teardown() {
     pc = null;
   }
   
-  // Clear all channel references
   controlChannel = null;
   inputChannel = null;
   mouseChannel = null;
   
-  // Update channel indicators
   updateChannelStatus('control', false);
   updateChannelStatus('input', false);
   updateChannelStatus('mouse', false);
@@ -1010,7 +1214,28 @@ function teardown() {
 window.addEventListener('beforeunload', teardown);
 
 // Initialize everything when DOM is loaded
-function initialize() {
+async function initialize() {
+  log('🚀 Dell Remote Desktop initializing...');
+  
+  // Prompt for device IP first
+  const deviceIP = await promptForDeviceIP();
+  
+  if (!deviceIP) {
+    log('❌ No device IP provided, cannot continue');
+    showToast('Device IP required to continue', 'error');
+    return;
+  }
+  
+  log(`✅ Device IP configured: ${deviceIP}`);
+  
+  // Call connect API
+  const connected = await connectRemoteService();
+  
+  if (!connected) {
+    log('⚠️ Failed to connect to remote service, continuing anyway...');
+  }
+  
+  // Continue with normal initialization
   setupEventListeners();
   setupAppLauncher();
   connectSignaling();
@@ -1026,6 +1251,7 @@ function initialize() {
   
   log('🚀 Dell Remote Desktop initialized with multi-channel architecture');
   log('📋 Channels: Control→Service, Input→UnifiedCaptureHelper, Mouse→UnifiedCaptureHelper');
+  log('🔌 WDA Service integration enabled');
 }
 
 // Start when DOM is ready
